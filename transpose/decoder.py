@@ -3,6 +3,7 @@ import json
 from transpose.sql.test import TEST_QUERY
 from transpose.utils.request import send_transpose_sql_request
 from transpose.utils.exceptions import DecoderConfigError
+from transpose.utils.address import to_checksum_address
 
 
 class Decoder:
@@ -15,7 +16,7 @@ class Decoder:
 
         """
         Initialize the decoder class. Doing so requires a valid API key, a valid contract address, and 
-        a valid ABI, supplied as a dict or a path to a JSON file.
+        a valid ABI, supplied as either a dict or a path to a JSON file.
 
         :param transpose_api_key: The API key for Transpose.
         :param contract_address: The contract address.
@@ -35,5 +36,17 @@ class Decoder:
         )
 
         # validate contract address
-        if contract_address is None or not isinstance(contract_address, str) or len(contract_address) <= 0:
-            
+        self.contract_address = to_checksum_address(contract_address)
+        if self.contract_address is None: raise DecoderConfigError('Invalid contract address')
+
+        # validate ABI
+        if abi is None and abi_path is None: raise DecoderConfigError('ABI is required')
+        elif abi is not None and abi_path is not None: raise DecoderConfigError('Only one of ABI or ABI path can be supplied')
+        elif abi is not None: self.abi = abi
+        elif abi_path is not None:
+            try: self.abi = json.load(open(abi_path))
+            except: raise DecoderConfigError('Invalid ABI path')
+
+        # validate ABI object
+        if not isinstance(self.abi, list): raise DecoderConfigError('ABI must be a list of dicts')
+        elif not all([isinstance(x, dict) for x in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
