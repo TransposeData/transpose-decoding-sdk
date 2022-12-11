@@ -18,7 +18,8 @@ def all_logs_query(contract_address: str, start_block: int,
         FROM ethereum.logs
         WHERE address = '{contract_address}'
         AND block_number >= {start_block}
-        {'AND block_number <= ' + str(end_block) if end_block is not None else ''}
+        {'AND block_number < ' + str(end_block) if end_block is not None else ''}
+        ORDER BY block_number ASC, log_index ASC
         {'LIMIT ' + str(limit) if limit is not None else ''};
         """
 
@@ -44,6 +45,7 @@ def logs_query(contract_address: str, topic_0: str, start_block: int, end_block:
         WHERE address = '{contract_address}'
         AND topic_0 = '{topic_0}'
         AND block_number >= {start_block}
-        AND block_number <= {end_block}
+        AND block_number < {end_block}
+        ORDER BY block_number ASC, log_index ASC
         {'LIMIT ' + str(limit) if limit is not None else ''};
         """

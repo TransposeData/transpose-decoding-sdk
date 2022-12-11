@@ -1,44 +1,64 @@
 import json
 
+from transpose.stream.base import Stream
+from transpose.stream.event import EventStream
+from transpose.stream.call import CallStream
 from transpose.sql.test import test_query
 from transpose.utils.request import send_transpose_sql_request
 from transpose.utils.exceptions import DecoderConfigError
 from transpose.utils.address import to_checksum_address
 
 
-class Decoder:
+class TransposeContractDecoder:
     """
-    The Decoder class is used to stream events and contract calls for a contract that uses a 
-    given ABI. There are four options 
+    The TransposeContractDecoder class is used to stream decoded events and contract calls for a contract
+    given its contract address and ABI. The class is initialized with a valid API key, contract address, and ABI.
+    The class can then be used to stream decoded events and contract calls by creating a stream with one of the 
+    four methods:
+
+        1) stream_all_events(): Stream all events for the contract.
+        2) stream_event(event_name): Stream a specific event for the contract.
+        3) stream_all_calls(): Stream all contract calls for the contract (can turn off internal calls/traces).
+        4) stream_call(function_name): Stream a specific contract call for the contract (can turn off internal calls/traces).
+
+    The stream can then be used to get the next decoded event or contract call with the next() method. The stream
+    can also be used as an iterator, which will return the next decoded event or contract call on each iteration.
     """
     
     def __init__(self, 
-                 transpose_api_key: str=None,
-                 contract_address: str=None,
-                 abi: dict=None,
-                 abi_path: str=None,
-                 chain: str='ethereum') -> None:
+                 api_key: str=None) -> None:
 
         """
-        Initialize the decoder class. Doing so requires a valid API key, a valid contract address, and 
-        a valid ABI, supplied as either a dict or a path to a JSON file.
+        Initialize the Transpose contract decoder class with a valid Transpose API key. 
 
-        :param transpose_api_key: The API key for Transpose.
-        :param contract_address: The contract address.
-        :param abi: The ABI, supplied as a dict.
-        :param abi_path: The path to the ABI, supplied as a JSON file.
+        :param api_key: The API key for the Transpose API.
         """
 
         # validate API key
-        if transpose_api_key is None or not isinstance(transpose_api_key, str) or len(transpose_api_key) <= 0: 
+        if api_key is None or not isinstance(api_key, str) or len(api_key) <= 0: 
             raise DecoderConfigError('Transpose API key is required')
-        self.transpose_api_key = transpose_api_key
+        self.api_key = api_key
         
         # run test query
         send_transpose_sql_request(
-            api_key=self.transpose_api_key,
+            api_key=self.api_key,
             query=test_query()
         )
+
+
+    def load_contract(self, contract_address: str, 
+                      abi: dict=None, 
+                      abi_path: str=None,
+                      chain: str='ethereum') -> None:
+
+        """
+        Load a new contract address and ABI.
+
+        :param contract_address: The contract address.
+        :param abi: The ABI, supplied as a dict.
+        :param abi_path: The path to the ABI, supplied as a JSON file.
+        :param chain: The chain the contract is deployed on.
+        """
 
         # validate contract address
         self.contract_address = to_checksum_address(contract_address)
@@ -54,54 +74,69 @@ class Decoder:
 
         # validate ABI object
         if not isinstance(self.abi, list): raise DecoderConfigError('ABI must be a list of dicts')
-        elif not all([isinstance(x, dict) for x in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
+        elif not all([isinstance(item, dict) for item in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
 
         # validate chain
-        self.chain = chain.lower()
-        if self.chain not in ['ethereum', 'polygon', 'goerli']:
-            raise DecoderConfigError('Invalid chain')
-
-        # initialize stream
-        self.stream = None
+        if chain is None or not isinstance(chain, str) or len(chain) <= 0: raise DecoderConfigError('Chain is required')
+        self.chain = chain
 
 
     def stream_all_events(self, 
                           start_block: int=0,
-                          end_block: int=None,
-                          limit: int=None) -> None:
+                          end_block: int=None) -> Stream:
 
         """
         Initiate a stream of all the events for a given contract.
 
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param limit: The maximum number of events to return.
+        :return: A Stream object.
         """
         
-        pass
+        return EventStream(
+            api_key=self.api_key,
+            contract_address=self.contract_address,
+            abi=self.abi,
+            event_name=None,
+            start_block=start_block,
+            end_block=end_block
+        )
 
 
-    def stream_events(self, event_name: str,
-                      start_block: int=0,
-                      end_block: int=None,
-                      limit: int=None) -> None:
+    def stream_event(self, event_name: str,
+                     start_block: int=0,
+                     end_block: int=None) -> Stream:
         
-        pass
+        """
+        Initiate a stream of a specific event for a given contract.
+
+        :param event_name: The name of the event.
+        :param start_block: The starting block number.
+        :param end_block: The ending block number.
+        :return: A Stream object.
+        """
+
+        return EventStream(
+            api_key=self.api_key,
+            contract_address=self.contract_address,
+            abi=self.abi,
+            event_name=event_name,
+            start_block=start_block,
+            end_block=end_block
+        )
 
 
     def stream_all_calls(self,
                          start_block: int=0,
                          end_block: int=None,
-                         limit: int=None,
-                         transactions_only: bool=False) -> None:
+                         transactions_only: bool=False) -> Stream:
             
         pass
 
 
-    def stream_calls(self, function_name: str,
-                     start_block: int=0,
-                     end_block: int=None,
-                     limit: int=None,
-                     transactions_only: bool=False) -> None:
+    def stream_call(self, function_name: str,
+                    start_block: int=0,
+                    end_block: int=None,
+                    transactions_only: bool=False) -> Stream:
         
         pass
