@@ -1,6 +1,7 @@
 class DecoderConfigError(Exception):
     """
-    An exception class for errors that occur when initializing the decoder.
+    The DecoderConfigError exception class is raised for errors that 
+    occur when initializing the decoder.
     """
 
     def __init__(self, message: str) -> None:
@@ -15,7 +16,7 @@ class DecoderConfigError(Exception):
     
     def __str__(self) -> str:
         """
-        Return the error message.
+        Return the string-formated error message.
 
         :return: The error message.
         """
@@ -25,8 +26,9 @@ class DecoderConfigError(Exception):
 
 class TransposeAPIError(Exception):
     """
-    An exception class for errors that occur when calling the Transpose API. Each
-    error returned by the API has a status code and a message.
+    The TransposeAPIError exception class is raised for errors that occur 
+    when calling the Transpose API. Each error returned by the API has
+    a status code and a message.
     """
 
     def __init__(self, status_code: int, message: str) -> None:
@@ -43,7 +45,7 @@ class TransposeAPIError(Exception):
     
     def __str__(self) -> str:
         """
-        Return the error message.
+        Return the string-formated error message.
 
         :return: The error message.
         """

@@ -1,18 +1,23 @@
 import json
 
-from transpose.sql.test import TEST_QUERY
+from transpose.sql.test import test_query
 from transpose.utils.request import send_transpose_sql_request
 from transpose.utils.exceptions import DecoderConfigError
 from transpose.utils.address import to_checksum_address
 
 
 class Decoder:
+    """
+    The Decoder class is used to stream events and contract calls for a contract that uses a 
+    given ABI.
+    """
     
     def __init__(self, 
                  transpose_api_key: str=None,
                  contract_address: str=None,
                  abi: dict=None,
-                 abi_path: str=None) -> None:
+                 abi_path: str=None,
+                 chain: str='ethereum') -> None:
 
         """
         Initialize the decoder class. Doing so requires a valid API key, a valid contract address, and 
@@ -32,7 +37,7 @@ class Decoder:
         # run test query
         send_transpose_sql_request(
             api_key=self.transpose_api_key,
-            query=TEST_QUERY
+            query=test_query()
         )
 
         # validate contract address
@@ -51,11 +56,27 @@ class Decoder:
         if not isinstance(self.abi, list): raise DecoderConfigError('ABI must be a list of dicts')
         elif not all([isinstance(x, dict) for x in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
 
+        # validate chain
+        self.chain = chain.lower()
+        if self.chain not in ['ethereum', 'polygon', 'goerli']:
+            raise DecoderConfigError('Invalid chain')
+
+        # initialize stream
+        self.stream = None
+
 
     def stream_all_events(self, 
                           block_start: int=0,
                           block_end: int=None,
                           limit: int=None) -> None:
+
+        """
+        Initiate a stream of all the events for a given contract.
+
+        :param block_start: The starting block number.
+        :param block_end: The ending block number.
+        :param limit: The maximum number of events to return.
+        """
         
         pass
 
