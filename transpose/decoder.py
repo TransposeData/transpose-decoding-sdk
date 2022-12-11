@@ -50,3 +50,37 @@ class Decoder:
         # validate ABI object
         if not isinstance(self.abi, list): raise DecoderConfigError('ABI must be a list of dicts')
         elif not all([isinstance(x, dict) for x in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
+
+
+    def stream_all_events(self, 
+                          block_start: int=0,
+                          block_end: int=None,
+                          limit: int=None) -> None:
+        
+        pass
+
+
+    def stream_events(self, event_name: str,
+                      block_start: int=0,
+                      block_end: int=None,
+                      limit: int=None) -> None:
+        
+        pass
+
+
+    def stream_all_calls(self,
+                         block_start: int=0,
+                         block_end: int=None,
+                         limit: int=None,
+                         transactions_only: bool=False) -> None:
+            
+        pass
+
+
+    def stream_calls(self, function_name: str,
+                     block_start: int=0,
+                     block_end: int=None,
+                     limit: int=None,
+                     transactions_only: bool=False) -> None:
+        
+        pass
