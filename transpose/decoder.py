@@ -9,7 +9,7 @@ from transpose.utils.address import to_checksum_address
 class Decoder:
     """
     The Decoder class is used to stream events and contract calls for a contract that uses a 
-    given ABI.
+    given ABI. There are four options 
     """
     
     def __init__(self, 
@@ -66,15 +66,15 @@ class Decoder:
 
 
     def stream_all_events(self, 
-                          block_start: int=0,
-                          block_end: int=None,
+                          start_block: int=0,
+                          end_block: int=None,
                           limit: int=None) -> None:
 
         """
         Initiate a stream of all the events for a given contract.
 
-        :param block_start: The starting block number.
-        :param block_end: The ending block number.
+        :param start_block: The starting block number.
+        :param end_block: The ending block number.
         :param limit: The maximum number of events to return.
         """
         
@@ -82,16 +82,16 @@ class Decoder:
 
 
     def stream_events(self, event_name: str,
-                      block_start: int=0,
-                      block_end: int=None,
+                      start_block: int=0,
+                      end_block: int=None,
                       limit: int=None) -> None:
         
         pass
 
 
     def stream_all_calls(self,
-                         block_start: int=0,
-                         block_end: int=None,
+                         start_block: int=0,
+                         end_block: int=None,
                          limit: int=None,
                          transactions_only: bool=False) -> None:
             
@@ -99,8 +99,8 @@ class Decoder:
 
 
     def stream_calls(self, function_name: str,
-                     block_start: int=0,
-                     block_end: int=None,
+                     start_block: int=0,
+                     end_block: int=None,
                      limit: int=None,
                      transactions_only: bool=False) -> None:
         

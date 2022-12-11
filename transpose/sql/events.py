@@ -1,12 +1,13 @@
-def all_logs_query(contract_address: str, block_start: int, block_end: int,
+def all_logs_query(contract_address: str, start_block: int, 
+                   end_block: int=None,
                    limit: int=None) -> str:
 
     """
     Defines a SQL query that returns all logs for a given contract.
 
     :param contract_address: The contract address.
-    :param block_start: The starting block number.
-    :param block_end: The ending block number.
+    :param start_block: The starting block number.
+    :param end_block: The ending block number.
     :param limit: The maximum number of logs to return.
     :return: The SQL query.
     """
@@ -16,13 +17,13 @@ def all_logs_query(contract_address: str, block_start: int, block_end: int,
         SELECT *
         FROM ethereum.logs
         WHERE address = '{contract_address}'
-        AND block_number >= {block_start}
-        AND block_number <= {block_end}
+        AND block_number >= {start_block}
+        {'AND block_number <= ' + str(end_block) if end_block is not None else ''}
         {'LIMIT ' + str(limit) if limit is not None else ''};
         """
 
 
-def logs_query(contract_address: str, topic_0: str, block_start: int, block_end: int,
+def logs_query(contract_address: str, topic_0: str, start_block: int, end_block: int,
                limit: int=None) -> str:
 
     """
@@ -30,8 +31,8 @@ def logs_query(contract_address: str, topic_0: str, block_start: int, block_end:
 
     :param contract_address: The contract address.
     :param topic_0: The event signature.
-    :param block_start: The starting block number.
-    :param block_end: The ending block number.
+    :param start_block: The starting block number.
+    :param end_block: The ending block number.
     :param limit: The maximum number of logs to return.
     :return: The SQL query.
     """
@@ -42,7 +43,7 @@ def logs_query(contract_address: str, topic_0: str, block_start: int, block_end:
         FROM ethereum.logs
         WHERE address = '{contract_address}'
         AND topic_0 = '{topic_0}'
-        AND block_number >= {block_start}
-        AND block_number <= {block_end}
+        AND block_number >= {start_block}
+        AND block_number <= {end_block}
         {'LIMIT ' + str(limit) if limit is not None else ''};
         """
