@@ -55,7 +55,7 @@ class EventStream(Stream):
         self.event_signature = None
         if event_name is not None:
             matching_event_signatures = [k for k, v in self.topic_map.items() if v['name'] == event_name]
-            if len(matching_event_signatures) != 0: raise StreamConfigError('Invalid event name')
+            if len(matching_event_signatures) != 1: raise StreamConfigError('Invalid event name')
             self.event_signature = matching_event_signatures[0]
             
 

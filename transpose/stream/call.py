@@ -51,13 +51,11 @@ class CallStream(Stream):
         except Exception as e:
             raise StreamConfigError('Invalid ABI') from e
 
-        print(self.function_map)
-
         # get target function selector
         self.function_selector = None
         if function_name is not None:
             matching_function_selectors = [k for k, v in self.function_map.items() if v['name'] == function_name]
-            if len(matching_function_selectors) != 0: raise StreamConfigError('Invalid function name')
+            if len(matching_function_selectors) != 1: raise StreamConfigError('Invalid function name')
             self.function_selector = matching_function_selectors[0]
 
     
@@ -113,7 +111,7 @@ class CallStream(Stream):
         if len(data) > 0:
             state['block_number'] = data[-1]['block_number']
             state['transaction_position'] = data[-1]['transaction_position']
-            state['trace_index'] = data[-1]['trace_index']
+            state['trace_index'] = data[-1]['trace_index'] + 1
 
         return data, state
 
