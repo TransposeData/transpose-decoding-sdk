@@ -86,25 +86,30 @@ class Stream(ABC):
         :return: The next item.
         """
 
-        # check if we have any data left
-        if self.__it_idx is None or self.__it_idx >= len(self.__it_data):
-            self.__it_data = self.__load_next_batch(None)
-            self.__it_idx = 0
+        try:
 
-            # if scroll iterator is enabled, wait for data
-            if len(self.__it_data) == 0 and self.scroll_iterator:
-                while len(self.__it_data) == 0:
-                    time.sleep(self.scroll_delay)
-                    self.__it_data = self.__load_next_batch(None)
-            
-            # otherwise, raise StopIteration
-            elif len(self.__it_data) == 0:
-                raise StopIteration
-            
-        # get next item
-        item = self.__it_data[self.__it_idx]
-        self.__it_idx += 1
-        return item
+            # check if we have any data left
+            if self.__it_idx is None or self.__it_idx >= len(self.__it_data):
+                self.__it_data = self.__load_next_batch(None)
+                self.__it_idx = 0
+
+                # if scroll iterator is enabled, wait for data
+                if len(self.__it_data) == 0 and self.scroll_iterator:
+                    while len(self.__it_data) == 0:
+                        time.sleep(self.scroll_delay)
+                        self.__it_data = self.__load_next_batch(None)
+                
+                # otherwise, raise StopIteration
+                elif len(self.__it_data) == 0:
+                    raise StopIteration
+                
+            # get next item
+            item = self.__it_data[self.__it_idx]
+            self.__it_idx += 1
+            return item
+
+        except KeyboardInterrupt:
+            raise StopIteration
 
 
     def __load_next_batch(self, limit: int) -> List[dict]:

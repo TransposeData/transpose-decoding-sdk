@@ -25,7 +25,7 @@ class EventStream(Stream):
         """
         Initialize the stream.
 
-        :param api_key: The API key
+        :param api_key: The API key.
         :param chain: The chain name.
         :param contract_address: The contract address.
         :param abi: The contract ABI.
@@ -47,8 +47,8 @@ class EventStream(Stream):
         self.contract_address = contract_address
         self.abi = abi
 
-        # convert event name to signature
-        self.topic_0 = None
+        # convert event name to event signature
+        self.event_signature = None
         if event_name is not None:
             signature_prehash = ''
             for item in self.abi:
@@ -84,10 +84,12 @@ class EventStream(Stream):
             # hash signature prehash
             if signature_prehash == '':
                 raise StreamConfigError('Invalid event name')
-            self.topic_0 = Web3.keccak(text=signature_prehash).hex()
+            self.event_signature = Web3.keccak(text=signature_prehash).hex()
 
         # build topic map
-        self.topic_map = get_topic_map(self.abi)
+        self.topic_map = get_topic_map(
+            abi=self.abi
+        )
 
 
     def reset(self, start_block: int) -> dict:
@@ -123,7 +125,7 @@ class EventStream(Stream):
             contract_address=self.contract_address,
             from_block=state['block_number'],
             from_log_index=state['log_index'],
-            topic_0=self.topic_0,
+            topic_0=self.event_signature,
             stop_block=stop_block,
             limit=limit
         )

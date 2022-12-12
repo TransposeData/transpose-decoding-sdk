@@ -13,13 +13,10 @@ class TransposeContractDecoder:
     """
     The TransposeContractDecoder class is used to stream decoded events and contract calls for a contract
     given its contract address and ABI. The class is initialized with a valid API key, contract address, and ABI.
-    The class can then be used to stream decoded events and contract calls by creating a stream with one of the 
-    four methods:
-
-        1) stream_all_events(): Stream all events for the contract.
-        2) stream_event(event_name): Stream a specific event for the contract.
-        3) stream_all_calls(): Stream all contract calls for the contract (can turn off internal calls/traces).
-        4) stream_call(function_name): Stream a specific contract call for the contract (can turn off internal calls/traces).
+    The class can then be used to stream decoded events and contract calls by either calling the stream_events()
+    or stream_calls() methods with a number of parameters. The stream_events() method will return an EventStream
+    object, which can be used to stream decoded events. The stream_calls() method will return a CallStream object,
+    which can be used to stream decoded contract calls.
 
     The stream can then be used to get the next decoded event or contract call with the next() method. The stream
     can also be used as an iterator, which will return the next decoded event or contract call on each iteration.
@@ -82,51 +79,15 @@ class TransposeContractDecoder:
             raise DecoderConfigError('Invalid chain')
 
 
-    def stream_all_events(self, 
-                          start_block: int=None,
-                          end_block: int=None,
-                          scroll_iterator: bool=False,
-                          scroll_delay: int=3) -> Stream:
-
-        """
-        Initiate a stream of all the events for a given contract.
-
-        :param start_block: The starting block number.
-        :param end_block: The ending block number.
-        :param scroll_iterator: Whether to use a scroll iterator.
-        :param scroll_delay: The delay between scroll requests.
-        :return: A Stream object.
-        """
-
-        # get latest block number if no start block
-        if start_block is None:
-            start_block = send_transpose_sql_request(
-                api_key=self.api_key,
-                query=latest_block_query(self.chain)
-            )[0]['block_number'] + 1
-        
-        # return stream
-        return EventStream(
-            api_key=self.api_key,
-            chain=self.chain,
-            contract_address=self.contract_address,
-            abi=self.abi,
-            event_name=None,
-            start_block=start_block,
-            end_block=end_block,
-            scroll_iterator=scroll_iterator,
-            scroll_delay=scroll_delay
-        )
-
-
-    def stream_event(self, event_name: str,
-                     start_block: int=None,
-                     end_block: int=None,
-                     scroll_iterator: bool=False,
-                     scroll_delay: int=3) -> Stream:
+    def stream_events(self, 
+                      event_name: str=None,
+                      start_block: int=None,
+                      end_block: int=None,
+                      scroll_iterator: bool=False,
+                      scroll_delay: int=3) -> Stream:
         
         """
-        Initiate a stream of a specific event for a given contract.
+        Initiate a stream for contract events.
 
         :param event_name: The name of the event.
         :param start_block: The starting block number.
@@ -157,17 +118,12 @@ class TransposeContractDecoder:
         )
 
 
-    def stream_all_calls(self,
-                         start_block: int=0,
-                         end_block: int=None,
-                         transactions_only: bool=False) -> Stream:
-            
-        pass
-
-
-    def stream_call(self, function_name: str,
-                    start_block: int=0,
-                    end_block: int=None,
-                    transactions_only: bool=False) -> Stream:
+    def stream_calls(self, 
+                     function_name: str=None,
+                     start_block: int=None,
+                     end_block: int=None,
+                     scroll_iterator: bool=False,
+                     scroll_delay: int=3,
+                     include_internal_calls: bool=True) -> Stream:
         
         pass

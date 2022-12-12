@@ -18,7 +18,7 @@ def logs_query(chain: str, contract_address: str, from_block: int, from_log_inde
 
     return \
         f"""
-        SELECT *
+        SELECT timestamp, block_number, log_index, transaction_hash, transaction_position, address, data, topic_0, topic_1, topic_2, topic_3, __confirmed
         FROM {chain}.logs
         WHERE address = '{contract_address}'
         {f"AND topic_0 = '{topic_0}'" if topic_0 is not None else ""}

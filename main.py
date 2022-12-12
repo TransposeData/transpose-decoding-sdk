@@ -14,8 +14,8 @@ if __name__ == '__main__':
     )
     
     # build stream
-    stream = contract_decoder.stream_event(
-        event_name='Withdrawal',
+    stream = contract_decoder.stream_events(
+        # event_name='Withdrawal',
         scroll_iterator=True
     )
 
