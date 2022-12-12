@@ -1,11 +1,10 @@
-from eth_event import get_log_topic
 from typing import Tuple, List
-from web3 import Web3
 
 from transpose.stream.base import Stream
 from transpose.sql.calls import calls_query
 from transpose.utils.exceptions import StreamConfigError
 from transpose.utils.request import send_transpose_sql_request
+from transpose.utils.decode import build_function_map
 
 
 class CallStream(Stream):
@@ -47,19 +46,19 @@ class CallStream(Stream):
         self.contract_address = contract_address
         self.abi = abi
 
+        # build function map
+        try: self.function_map = build_function_map(self.abi)
+        except Exception as e:
+            raise StreamConfigError('Invalid ABI') from e
+
+        print(self.function_map)
+
         # get target function selector
         self.function_selector = None
         if function_name is not None:
-            for item in self.abi:
-                if 'type' not in item or item['type'] != 'function': continue
-                elif 'name' not in item or item['name'] != function_name: continue
-                self.function_selector = get_log_topic(item)[:10]
-
-        # build contract object
-        self.contract = Web3().eth.contract(
-            address=self.contract_address,
-            abi=self.abi
-        )
+            matching_function_selectors = [k for k, v in self.function_map.items() if v['name'] == function_name]
+            if len(matching_function_selectors) != 0: raise StreamConfigError('Invalid function name')
+            self.function_selector = matching_function_selectors[0]
 
     
     def reset(self, start_block: int) -> dict:

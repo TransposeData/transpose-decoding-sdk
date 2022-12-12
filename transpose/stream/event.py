@@ -54,9 +54,9 @@ class EventStream(Stream):
         # get target event signature
         self.event_signature = None
         if event_name is not None:
-            self.event_signature = [k for k, v in self.topic_map.items() if v['name'] == event_name]
-            if len(self.event_signature) == 0: raise StreamConfigError('Invalid event name')
-            self.event_signature = self.event_signature[0]
+            matching_event_signatures = [k for k, v in self.topic_map.items() if v['name'] == event_name]
+            if len(matching_event_signatures) != 0: raise StreamConfigError('Invalid event name')
+            self.event_signature = matching_event_signatures[0]
             
 
     def reset(self, start_block: int) -> dict:
