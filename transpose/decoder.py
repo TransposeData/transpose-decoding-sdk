@@ -3,7 +3,7 @@ import json
 from transpose.stream.base import Stream
 from transpose.stream.event import EventStream
 from transpose.stream.call import CallStream
-from transpose.sql.test import test_query
+from transpose.sql.general import latest_block_query
 from transpose.utils.request import send_transpose_sql_request
 from transpose.utils.exceptions import DecoderConfigError
 from transpose.utils.address import to_checksum_address
@@ -42,7 +42,7 @@ class TransposeContractDecoder:
         # run test query
         send_transpose_sql_request(
             api_key=self.api_key,
-            query=test_query()
+            query=latest_block_query('ethereum')
         )
 
 
@@ -77,35 +77,53 @@ class TransposeContractDecoder:
         elif not all([isinstance(item, dict) for item in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
 
         # validate chain
-        if chain is None or not isinstance(chain, str) or len(chain) <= 0: raise DecoderConfigError('Chain is required')
         self.chain = chain
+        if chain not in ['ethereum', 'goerli', 'polygon']: 
+            raise DecoderConfigError('Invalid chain')
 
 
     def stream_all_events(self, 
-                          start_block: int=0,
-                          end_block: int=None) -> Stream:
+                          start_block: int=None,
+                          end_block: int=None,
+                          scroll_iterator: bool=False,
+                          scroll_delay: int=3) -> Stream:
 
         """
         Initiate a stream of all the events for a given contract.
 
         :param start_block: The starting block number.
         :param end_block: The ending block number.
+        :param scroll_iterator: Whether to use a scroll iterator.
+        :param scroll_delay: The delay between scroll requests.
         :return: A Stream object.
         """
+
+        # get latest block number if no start block
+        if start_block is None:
+            start_block = send_transpose_sql_request(
+                api_key=self.api_key,
+                query=latest_block_query(self.chain)
+            )[0]['block_number'] + 1
         
+        # return stream
         return EventStream(
             api_key=self.api_key,
+            chain=self.chain,
             contract_address=self.contract_address,
             abi=self.abi,
             event_name=None,
             start_block=start_block,
-            end_block=end_block
+            end_block=end_block,
+            scroll_iterator=scroll_iterator,
+            scroll_delay=scroll_delay
         )
 
 
     def stream_event(self, event_name: str,
-                     start_block: int=0,
-                     end_block: int=None) -> Stream:
+                     start_block: int=None,
+                     end_block: int=None,
+                     scroll_iterator: bool=False,
+                     scroll_delay: int=3) -> Stream:
         
         """
         Initiate a stream of a specific event for a given contract.
@@ -113,16 +131,29 @@ class TransposeContractDecoder:
         :param event_name: The name of the event.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
+        :param scroll_iterator: Whether to use a scroll iterator.
+        :param scroll_delay: The delay between scroll requests.
         :return: A Stream object.
         """
 
+        # get latest block number if no start block
+        if start_block is None:
+            start_block = send_transpose_sql_request(
+                api_key=self.api_key,
+                query=latest_block_query(self.chain)
+            )[0]['block_number'] + 1
+
+        # return stream
         return EventStream(
             api_key=self.api_key,
+            chain=self.chain,
             contract_address=self.contract_address,
             abi=self.abi,
             event_name=event_name,
             start_block=start_block,
-            end_block=end_block
+            end_block=end_block,
+            scroll_iterator=scroll_iterator,
+            scroll_delay=scroll_delay
         )
 
 

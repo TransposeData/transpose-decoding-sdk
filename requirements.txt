@@ -9,6 +9,7 @@ charset-normalizer==2.1.1
 cytoolz==0.12.0
 eth-abi==2.2.0
 eth-account==0.5.9
+eth-event==1.2.3
 eth-hash==0.5.1
 eth-keyfile==0.5.1
 eth-keys==0.3.4

@@ -15,9 +15,8 @@ if __name__ == '__main__':
     
     # build stream
     stream = contract_decoder.stream_event(
-        event_name='Withdrawal', 
-        start_block=15000000, 
-        end_block=15000001
+        event_name='Withdrawal',
+        scroll_iterator=True
     )
 
     # iterate over stream

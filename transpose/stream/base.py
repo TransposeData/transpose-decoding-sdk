@@ -66,7 +66,9 @@ class Stream(ABC):
         return self
 
 
-    def next(self, limit: int=100) -> List[dict]:
+    def next(self, 
+             limit: int=100) -> List[dict]:
+             
         """
         Return the next batch of data from the stream.
 
@@ -119,7 +121,7 @@ class Stream(ABC):
         # fetch data
         data, self.__state = self.fetch(
             state=self.__state,
-            end_block=self.end_block,
+            stop_block=self.end_block,
             limit=limit
         )
 
@@ -146,7 +148,7 @@ class Stream(ABC):
 
     @abstractmethod
     def fetch(self, state: dict,
-              end_block: int=None,
+              stop_block: int=None,
               limit: int=None) -> Tuple[List[dict], dict]:
               
         """
@@ -154,7 +156,7 @@ class Stream(ABC):
         method that must be implemented by the child class.
 
         :param state: The current stream state.
-        :param end_block: The block to stop streaming at, exclusive.
+        :param stop_block: The block to stop streaming at, exclusive.
         :param limit: The maximum number of items to return in the batch.
         :return: A tuple containing the batch data and the resulting state.
         """

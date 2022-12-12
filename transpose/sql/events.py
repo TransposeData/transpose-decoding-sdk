@@ -1,39 +1,17 @@
-def all_logs_query(contract_address: str, start_block: int, 
-                   end_block: int=None,
-                   limit: int=None) -> str:
-
-    """
-    Defines a SQL query that returns all logs for a given contract.
-
-    :param contract_address: The contract address.
-    :param start_block: The starting block number.
-    :param end_block: The ending block number.
-    :param limit: The maximum number of logs to return.
-    :return: The SQL query.
-    """
-
-    return \
-        f"""
-        SELECT *
-        FROM ethereum.logs
-        WHERE address = '{contract_address}'
-        AND block_number >= {start_block}
-        {'AND block_number < ' + str(end_block) if end_block is not None else ''}
-        ORDER BY block_number ASC, log_index ASC
-        {'LIMIT ' + str(limit) if limit is not None else ''};
-        """
-
-
-def logs_query(contract_address: str, topic_0: str, start_block: int, end_block: int,
+def logs_query(chain: str, contract_address: str, from_block: int, from_log_index: int,
+               topic_0: str=None,
+               stop_block: int=None,
                limit: int=None) -> str:
 
     """
-    Defines a SQL query that returns logs for a given contract and event.
+    Defines a SQL query that returns logs for a given contract.
 
+    :param chain: The chain name.
     :param contract_address: The contract address.
+    :param from_block: The starting block number, inclusive.
+    :param from_log_index: The starting log index, inclusive.
     :param topic_0: The event signature.
-    :param start_block: The starting block number.
-    :param end_block: The ending block number.
+    :param stop_block: The ending block number, exclusive.
     :param limit: The maximum number of logs to return.
     :return: The SQL query.
     """
@@ -41,11 +19,11 @@ def logs_query(contract_address: str, topic_0: str, start_block: int, end_block:
     return \
         f"""
         SELECT *
-        FROM ethereum.logs
+        FROM {chain}.logs
         WHERE address = '{contract_address}'
-        AND topic_0 = '{topic_0}'
-        AND block_number >= {start_block}
-        AND block_number < {end_block}
+        {f"AND topic_0 = '{topic_0}'" if topic_0 is not None else ""}
+        AND (block_number, log_index) >= ({from_block}, {from_log_index})
+        {f"AND block_number < {stop_block}" if stop_block is not None else ""}
         ORDER BY block_number ASC, log_index ASC
-        {'LIMIT ' + str(limit) if limit is not None else ''};
+        {f"LIMIT {limit}" if limit is not None else ""}
         """
