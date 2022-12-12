@@ -76,8 +76,8 @@ class TransposeDecodedContract:
                       event_name: str=None,
                       start_block: int=None,
                       end_block: int=None,
-                      live_iterate: bool=False,
-                      live_iterate_refresh_interval: int=3) -> Stream:
+                      live_iterator: bool=False,
+                      live_iterator_refresh_interval: int=3) -> Stream:
         
         """
         Initiate a stream for contract events.
@@ -85,8 +85,8 @@ class TransposeDecodedContract:
         :param event_name: The name of the event.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param live_iterate: Whether to continuously iterate over live data.
-        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param live_iterator: Whether to continuously iterate over live data.
+        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
         :return: A Stream object.
         """
 
@@ -106,8 +106,8 @@ class TransposeDecodedContract:
             event_name=event_name,
             start_block=start_block,
             end_block=end_block,
-            live_iterate=live_iterate,
-            live_iterate_refresh_interval=live_iterate_refresh_interval
+            live_iterator=live_iterator,
+            live_iterator_refresh_interval=live_iterator_refresh_interval
         )
 
 
@@ -115,9 +115,8 @@ class TransposeDecodedContract:
                      function_name: str=None,
                      start_block: int=None,
                      end_block: int=None,
-                     live_iterate: bool=False,
-                     live_iterate_refresh_interval: int=3,
-                     include_internal_calls: bool=True) -> Stream:
+                     live_iterator: bool=False,
+                     live_iterator_refresh_interval: int=3) -> Stream:
         
         """
         Initiate a stream for contract calls.
@@ -125,9 +124,8 @@ class TransposeDecodedContract:
         :param function_name: The name of the function.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param live_iterate: Whether to continuously iterate over live data.
-        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
-        :param include_internal_calls: Whether to include internal contract calls.
+        :param live_iterator: Whether to continuously iterate over live data.
+        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
         :return: A Stream object.
         """
 
@@ -147,8 +145,7 @@ class TransposeDecodedContract:
             function_name=function_name,
             start_block=start_block,
             end_block=end_block,
-            live_iterate=live_iterate,
-            live_iterate_refresh_interval=live_iterate_refresh_interval,
-            include_internal_calls=include_internal_calls
+            live_iterator=live_iterator,
+            live_iterator_refresh_interval=live_iterator_refresh_interval
         )
             

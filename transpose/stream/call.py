@@ -1,3 +1,4 @@
+from eth_event import get_log_topic
 from typing import Tuple, List
 from web3 import Web3
 
@@ -18,9 +19,8 @@ class CallStream(Stream):
                  function_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
-                 live_iterate: bool=False,
-                 live_iterate_refresh_interval: int=3,
-                 include_internal_calls: bool=True) -> None:
+                 live_iterator: bool=False,
+                 live_iterator_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -31,58 +31,30 @@ class CallStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param live_iterate: Whether to continuously iterate over live data.
-        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
-        :param include_internal_calls: Whether to include internal calls.
+        :param live_iterator: Whether to continuously iterate over live data.
+        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
         """
 
         super().__init__(
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
-            live_iterate=live_iterate,
-            live_iterate_refresh_interval=live_iterate_refresh_interval
+            live_iterator=live_iterator,
+            live_iterator_refresh_interval=live_iterator_refresh_interval
         )
 
         self.chain = chain
         self.contract_address = contract_address
         self.abi = abi
-        self.include_internal_calls = include_internal_calls
 
-        # convert function name to selector
+        # get target function selector
         self.function_selector = None
         if function_name is not None:
-            signature_prehash = ''
             for item in self.abi:
-                    
-                # check type
-                if 'type' not in item or item['type'] not in ['event', 'constructor', 'fallback', 'function', 'error']: 
-                    raise StreamConfigError('Invalid ABI (missing type field)')
-                elif item['type'] != 'function': continue
+                if 'type' not in item or item['type'] != 'function': continue
+                elif 'name' not in item or item['name'] != function_name: continue
+                self.function_selector = get_log_topic(item)[:10]
 
-                # check name
-                elif 'name' not in item or not isinstance(item['name'], str) or len(item['name']) == 0:
-                    raise StreamConfigError('Invalid ABI (missing name field)')
-                elif item['name'] != function_name: continue
-
-                # check inputs
-                if 'inputs' not in item or not isinstance(item['inputs'], list): 
-                    raise StreamConfigError('Invalid ABI (missing inputs field)')
-                    
-                # build signature prehash
-                function_types = []
-                for input in item['inputs']:
-                    if 'type' not in input or not isinstance(input['type'], str) or len(input['type']) == 0:
-                        raise StreamConfigError('Invalid ABI (missing input type field)')
-                    function_types.append(input['type'])
-                signature_prehash = item['name'] + '(' + ','.join(function_types) + ')'
-                break
-
-            # hash signature prehash
-            if signature_prehash == '':
-                raise StreamConfigError('Invalid function name')
-            self.function_selector = Web3.sha3(text=signature_prehash).hex()[:10]
-        
         # build contract object
         self.contract = Web3().eth.contract(
             address=self.contract_address,

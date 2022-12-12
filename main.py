@@ -1,4 +1,4 @@
-from transpose.decoder import TransposeDecodedContract
+from transpose.contract import TransposeDecodedContract
 
 
 if __name__ == '__main__':
