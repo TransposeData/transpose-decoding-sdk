@@ -9,9 +9,9 @@ from transpose.utils.exceptions import DecoderConfigError
 from transpose.utils.address import to_checksum_address
 
 
-class TransposeContractDecoder:
+class TransposeDecodedContract:
     """
-    The TransposeContractDecoder class is used to stream decoded events and contract calls for a contract
+    The TransposeDecodedContract class is used to stream decoded events and contract calls for a contract
     given its contract address and ABI. The class is initialized with a valid API key, contract address, and ABI.
     The class can then be used to stream decoded events and contract calls by either calling the stream_events()
     or stream_calls() methods with a number of parameters. The stream_events() method will return an EventStream
@@ -22,39 +22,21 @@ class TransposeContractDecoder:
     can also be used as an iterator, which will return the next decoded event or contract call on each iteration.
     """
     
-    def __init__(self, 
+    def __init__(self, contract_address: str,
+                 abi: dict=None, 
+                 abi_path: str=None,
+                 chain: str='ethereum',
                  api_key: str=None) -> None:
 
         """
-        Initialize the Transpose contract decoder class with a valid Transpose API key. 
-
-        :param api_key: The API key for the Transpose API.
-        """
-
-        # validate API key
-        if api_key is None or not isinstance(api_key, str) or len(api_key) <= 0: 
-            raise DecoderConfigError('Transpose API key is required')
-        self.api_key = api_key
-        
-        # run test query
-        send_transpose_sql_request(
-            api_key=self.api_key,
-            query=latest_block_query('ethereum')
-        )
-
-
-    def load_contract(self, contract_address: str, 
-                      abi: dict=None, 
-                      abi_path: str=None,
-                      chain: str='ethereum') -> None:
-
-        """
-        Load a new contract address and ABI.
+        Initialize the TransposeDecodedContract class with a valid target contract and
+        Transpose API key.
 
         :param contract_address: The contract address.
         :param abi: The ABI, supplied as a dict.
         :param abi_path: The path to the ABI, supplied as a JSON file.
         :param chain: The chain the contract is deployed on.
+        :param api_key: The API key for the Transpose API.
         """
 
         # validate contract address
@@ -77,6 +59,17 @@ class TransposeContractDecoder:
         self.chain = chain
         if chain not in ['ethereum', 'goerli', 'polygon']: 
             raise DecoderConfigError('Invalid chain')
+
+        # validate API key
+        if api_key is None or not isinstance(api_key, str) or len(api_key) <= 0: 
+            raise DecoderConfigError('Transpose API key is required')
+        self.api_key = api_key
+        
+        # run test query
+        send_transpose_sql_request(
+            api_key=self.api_key,
+            query=latest_block_query('ethereum')
+        )
 
 
     def stream_events(self, 

@@ -56,7 +56,7 @@ class CallStream(Stream):
             for item in self.abi:
                     
                 # check type
-                if 'type' not in item or item['type'] not in ['event', 'constructor', 'fallback', 'function']: 
+                if 'type' not in item or item['type'] not in ['event', 'constructor', 'fallback', 'function', 'error']: 
                     raise StreamConfigError('Invalid ABI (missing type field)')
                 elif item['type'] != 'function': continue
 
@@ -163,5 +163,6 @@ class CallStream(Stream):
         # format decoded log
         return {
             'item': {
-                'contract_address': 1}
+                'contract_address': 1
+            }
         }
