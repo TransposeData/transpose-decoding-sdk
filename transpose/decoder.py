@@ -83,8 +83,8 @@ class TransposeContractDecoder:
                       event_name: str=None,
                       start_block: int=None,
                       end_block: int=None,
-                      scroll_iterator: bool=False,
-                      scroll_delay: int=3) -> Stream:
+                      live_iterate: bool=False,
+                      live_iterate_refresh_interval: int=3) -> Stream:
         
         """
         Initiate a stream for contract events.
@@ -92,8 +92,8 @@ class TransposeContractDecoder:
         :param event_name: The name of the event.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param scroll_iterator: Whether to use a scroll iterator.
-        :param scroll_delay: The delay between scroll requests.
+        :param live_iterate: Whether to continuously iterate over live data.
+        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
         :return: A Stream object.
         """
 
@@ -113,8 +113,8 @@ class TransposeContractDecoder:
             event_name=event_name,
             start_block=start_block,
             end_block=end_block,
-            scroll_iterator=scroll_iterator,
-            scroll_delay=scroll_delay
+            live_iterate=live_iterate,
+            live_iterate_refresh_interval=live_iterate_refresh_interval
         )
 
 
@@ -122,8 +122,40 @@ class TransposeContractDecoder:
                      function_name: str=None,
                      start_block: int=None,
                      end_block: int=None,
-                     scroll_iterator: bool=False,
-                     scroll_delay: int=3,
+                     live_iterate: bool=False,
+                     live_iterate_refresh_interval: int=3,
                      include_internal_calls: bool=True) -> Stream:
         
-        pass
+        """
+        Initiate a stream for contract calls.
+
+        :param function_name: The name of the function.
+        :param start_block: The starting block number.
+        :param end_block: The ending block number.
+        :param live_iterate: Whether to continuously iterate over live data.
+        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param include_internal_calls: Whether to include internal contract calls.
+        :return: A Stream object.
+        """
+
+        # get latest block number if no start block
+        if start_block is None:
+            start_block = send_transpose_sql_request(
+                api_key=self.api_key,
+                query=latest_block_query(self.chain)
+            )[0]['block_number'] + 1
+
+        # return stream
+        return CallStream(
+            api_key=self.api_key,
+            chain=self.chain,
+            contract_address=self.contract_address,
+            abi=self.abi,
+            function_name=function_name,
+            start_block=start_block,
+            end_block=end_block,
+            live_iterate=live_iterate,
+            live_iterate_refresh_interval=live_iterate_refresh_interval,
+            include_internal_calls=include_internal_calls
+        )
+            

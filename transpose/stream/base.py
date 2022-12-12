@@ -17,8 +17,8 @@ class Stream(ABC):
     def __init__(self, api_key: str,
                  start_block: int=0,
                  end_block: int=None,
-                 scroll_iterator: bool=False,
-                 scroll_delay: int=3) -> None:
+                 live_iterate: bool=False,
+                 live_iterate_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -26,15 +26,15 @@ class Stream(ABC):
         :param api_key: The API key for the Transpose API.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param scroll_iterator: Whether to scroll the iterator when reaches live.
-        :param scroll_delay: The delay between scroll attempts in seconds.
+        :param live_iterate: Whether to scroll the iterator when reaches live.
+        :param live_iterate_refresh_interval: The delay between scroll attempts in seconds.
         """
 
         self.api_key = api_key
         self.start_block = start_block
         self.end_block = end_block
-        self.scroll_iterator = scroll_iterator
-        self.scroll_delay = scroll_delay
+        self.live_iterate = live_iterate
+        self.live_iterate_refresh_interval = live_iterate_refresh_interval
         self.__state = None
         self.__it_idx = None
         self.__it_data = None
@@ -46,13 +46,13 @@ class Stream(ABC):
             raise StreamConfigError('Invalid end block')
 
         # validate scroll iterator
-        if not isinstance(scroll_iterator, bool):
+        if not isinstance(live_iterate, bool):
             raise StreamConfigError('Invalid scroll iterator')
-        elif scroll_iterator and end_block is not None:
+        elif live_iterate and end_block is not None:
             raise StreamConfigError('Cannot scroll iterator when end block is specified')
 
         # validate scroll delay
-        if not isinstance(scroll_delay, int) or scroll_delay < 0:
+        if not isinstance(live_iterate_refresh_interval, int) or live_iterate_refresh_interval < 0:
             raise StreamConfigError('Invalid scroll delay')
 
 
@@ -94,9 +94,9 @@ class Stream(ABC):
                 self.__it_idx = 0
 
                 # if scroll iterator is enabled, wait for data
-                if len(self.__it_data) == 0 and self.scroll_iterator:
+                if len(self.__it_data) == 0 and self.live_iterate:
                     while len(self.__it_data) == 0:
-                        time.sleep(self.scroll_delay)
+                        time.sleep(self.live_iterate_refresh_interval)
                         self.__it_data = self.__load_next_batch(None)
                 
                 # otherwise, raise StopIteration

@@ -1,9 +1,8 @@
 from eth_event import get_topic_map, decode_log
 from typing import Tuple, List
-from web3 import Web3
 
 from transpose.stream.base import Stream
-from transpose.sql.events import logs_query
+from transpose.sql.events import events_query
 from transpose.utils.exceptions import StreamConfigError
 from transpose.utils.request import send_transpose_sql_request
 
@@ -19,8 +18,8 @@ class EventStream(Stream):
                  event_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
-                 scroll_iterator: bool=False,
-                 scroll_delay: int=3) -> None:
+                 live_iterate: bool=False,
+                 live_iterate_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -31,66 +30,34 @@ class EventStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param scroll_iterator: Whether to use a scroll iterator.
-        :param scroll_delay: The delay between scroll requests.
+        :param live_iterate: Whether to continuously iterate over live data.
+        :param live_iterate_refresh_interval: The interval between refreshing the data when live in seconds.
         """
 
         super().__init__(
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
-            scroll_iterator=scroll_iterator,
-            scroll_delay=scroll_delay
+            live_iterate=live_iterate,
+            live_iterate_refresh_interval=live_iterate_refresh_interval
         )
 
         self.chain = chain
         self.contract_address = contract_address
         self.abi = abi
 
-        # convert event name to event signature
+        # build topic map
+        try: self.topic_map = get_topic_map(self.abi)
+        except Exception as e:
+            raise StreamConfigError('Invalid ABI') from e
+
+        # get target event
         self.event_signature = None
         if event_name is not None:
-            signature_prehash = ''
-            for item in self.abi:
-
-                # check type
-                if 'type' not in item or item['type'] not in ['event', 'constructor', 'fallback', 'function']: 
-                    raise StreamConfigError('Invalid ABI (missing type field)')
-                elif item['type'] != 'event': continue
-
-                # check anonymous
-                elif 'anonymous' not in item or not isinstance(item['anonymous'], bool): 
-                    raise StreamConfigError('Invalid ABI (missing anonymous field)')
-                elif item['anonymous']: continue
-
-                # check name
-                elif 'name' not in item or not isinstance(item['name'], str) or len(item['name']) == 0:
-                    raise StreamConfigError('Invalid ABI (missing name field)')
-                elif item['name'] != event_name: continue
-
-                # check inputs
-                if 'inputs' not in item or not isinstance(item['inputs'], list): 
-                    raise StreamConfigError('Invalid ABI (missing inputs field)')
-
-                # build signature prehash
-                signature_prehash += item['name'] + '('
-                for input in item['inputs']:
-                    if 'type' not in input or not isinstance(input['type'], str) or len(input['type']) == 0:
-                        raise StreamConfigError('Invalid ABI (missing input type field)')
-                    signature_prehash += input['type'] + ','
-                signature_prehash = signature_prehash[:-1] + ')'
-                break
-        
-            # hash signature prehash
-            if signature_prehash == '':
-                raise StreamConfigError('Invalid event name')
-            self.event_signature = Web3.keccak(text=signature_prehash).hex()
-
-        # build topic map
-        self.topic_map = get_topic_map(
-            abi=self.abi
-        )
-
+            self.event_signature = [k for k, v in self.topic_map.items() if v['name'] == event_name]
+            if len(self.event_signature) == 0: raise StreamConfigError('Invalid event name')
+            self.event_signature = self.event_signature[0]
+            
 
     def reset(self, start_block: int) -> dict:
         """
@@ -98,6 +65,7 @@ class EventStream(Stream):
         state is simply the start block and the zero log index.
 
         :param start_block: The block to reset the stream to.
+        :return: The default stream state.
         """
 
         return {
@@ -111,8 +79,8 @@ class EventStream(Stream):
               limit: int=None) -> Tuple[List[dict], dict]:
 
         """
-        Fetch the next set of logs from the stream and update the 
-        state.
+        Fetch the next set of raw events for the stream and update the 
+        stream state.
 
         :param state: The current stream state.
         :param stop_block: The block to stop fetching at, exclusive.
@@ -120,7 +88,7 @@ class EventStream(Stream):
         """
 
         # build query
-        query = logs_query(
+        query = events_query(
             chain=self.chain,
             contract_address=self.contract_address,
             from_block=state['block_number'],
@@ -186,7 +154,7 @@ class EventStream(Stream):
                 'transaction_position': data['transaction_position'],
                 'confirmed': data['__confirmed']
             },
-            'data': {
+            'event': {
                 d['name']: d['value'] 
                 for d in decoded_log['data']
             }

@@ -1,7 +1,7 @@
-def logs_query(chain: str, contract_address: str, from_block: int, from_log_index: int,
-               topic_0: str=None,
-               stop_block: int=None,
-               limit: int=None) -> str:
+def events_query(chain: str, contract_address: str, from_block: int, from_log_index: int,
+                 topic_0: str=None,
+                 stop_block: int=None,
+                 limit: int=None) -> str:
 
     """
     Defines a SQL query that returns logs for a given contract.
