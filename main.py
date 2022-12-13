@@ -1,4 +1,5 @@
 from transpose.contract import TransposeDecodedContract
+import time
 
 
 if __name__ == '__main__':
@@ -8,7 +9,7 @@ if __name__ == '__main__':
         contract_address='0x00000000006c3852cbEf3e08E8dF289169EdE581',
         abi_path='abi/opensea-seaport-abi.json',
         chain='ethereum',
-        api_key='enP9LfNUmGt0WRg1LNG4nSYK2MC1waEH'
+        api_key='4IfOT4rq7Vdi1mFpfVx3KLu3CN66p8Gm'
     )
     
     # # build event stream
@@ -19,13 +20,13 @@ if __name__ == '__main__':
 
     # build call stream
     stream = contract.stream_calls(
-        function_name='fulfillBasicOrder',
+        live_stream=True,
         start_block=0
     )
 
-    # get next event
-    print(stream.next(1))
-
-    # # iterate over stream
-    # for event in stream:
-    #     print(event)
+    # iterate over stream
+    t1 = time.time()
+    counter = 0
+    for event in stream:
+        counter += 1
+        print('\rEPS: {}\t'.format(round(counter / (time.time() - t1), 3)), end='')

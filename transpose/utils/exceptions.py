@@ -1,33 +1,7 @@
-class DecoderConfigError(Exception):
+class ContractError(Exception):
     """
-    The DecoderConfigError exception class is raised for errors that 
-    occur when initializing the decoder.
-    """
-
-    def __init__(self, message: str) -> None:
-        """
-        Initialize the exception class.
-
-        :param message: The error message.
-        """
-        
-        self.message = message
-
-    
-    def __str__(self) -> str:
-        """
-        Return the string-formated error message.
-
-        :return: The error message.
-        """
-        
-        return 'DecoderConfigError ({})'.format(self.message)
-
-
-class StreamConfigError(Exception):
-    """
-    The StreamConfigError exception class is raised for errors that 
-    occur when initializing the stream.
+    The ContractError exception class is raised for errors that 
+    occur during contract execution.
     """
 
     def __init__(self, message: str) -> None:
@@ -47,7 +21,33 @@ class StreamConfigError(Exception):
         :return: The error message.
         """
         
-        return 'StreamConfigError ({})'.format(self.message)
+        return 'ContractError ({})'.format(self.message)
+
+
+class StreamError(Exception):
+    """
+    The StreamError exception class is raised for errors that 
+    occur when during stream execution.
+    """
+
+    def __init__(self, message: str) -> None:
+        """
+        Initialize the exception class.
+
+        :param message: The error message.
+        """
+        
+        self.message = message
+
+    
+    def __str__(self) -> str:
+        """
+        Return the string-formated error message.
+
+        :return: The error message.
+        """
+        
+        return 'StreamError ({})'.format(self.message)
 
 
 class TransposeAPIError(Exception):

@@ -2,9 +2,9 @@ from typing import Tuple, List
 
 from transpose.stream.base import Stream
 from transpose.sql.calls import calls_query
-from transpose.utils.exceptions import StreamConfigError
+from transpose.utils.exceptions import StreamError
 from transpose.utils.request import send_transpose_sql_request
-from transpose.utils.decode import build_function_map
+from transpose.utils.decode import build_function_map, decode_hex_data, resolve_decoded_data
 
 
 class CallStream(Stream):
@@ -18,8 +18,8 @@ class CallStream(Stream):
                  function_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
-                 live_iterator: bool=False,
-                 live_iterator_refresh_interval: int=3) -> None:
+                 live_stream: bool=False,
+                 live_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -30,16 +30,16 @@ class CallStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param live_iterator: Whether to continuously iterate over live data.
-        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param live_stream: Whether to stream live data.
+        :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         """
 
         super().__init__(
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
-            live_iterator=live_iterator,
-            live_iterator_refresh_interval=live_iterator_refresh_interval
+            live_stream=live_stream,
+            live_refresh_interval=live_refresh_interval
         )
 
         self.chain = chain
@@ -48,14 +48,13 @@ class CallStream(Stream):
 
         # build function map
         try: self.function_map = build_function_map(self.abi)
-        except Exception as e:
-            raise StreamConfigError('Invalid ABI') from e
+        except Exception as e: raise StreamError('Invalid ABI') from e
 
         # get target function selector
         self.function_selector = None
         if function_name is not None:
             matching_function_selectors = [k for k, v in self.function_map.items() if v['name'] == function_name]
-            if len(matching_function_selectors) != 1: raise StreamConfigError('Invalid function name')
+            if len(matching_function_selectors) != 1: raise StreamError('Invalid function name')
             self.function_selector = matching_function_selectors[0]
 
     
@@ -119,19 +118,53 @@ class CallStream(Stream):
     def decode(self, data: dict) -> dict:
         """
         Decode the raw transaction/trace data into a decoded call. The decoded 
-        call is a dictionary with three fields: the item, the context, the input_data,
-        and the output_data. The item field contains information on the target
-        activity, the context field contains information on the
-        context of the activity, and the input_data and output_data fields
-        contain the decoded input and output data for the call.
+        call is a dictionary with five fields: the item, the context, the call_data,
+        the input_data, and the output_data. The item field contains information 
+        on the target activity, the context field contains information on the
+        context of the activity, the call_data contains information on the underlying
+        call, and the input_data and output_data fields contain the decoded input 
+        and output data for the call.
 
         :param data: The raw transaction/trace data.
         :return: The decoded call data.
         """
 
+        # check if function selector is in function map
+        function_selector = data['input'][:10]
+        if function_selector not in self.function_map: 
+            return None
+
+        # decode input
+        function_data = self.function_map[function_selector]
+        decoded_input = decode_hex_data(function_data['inputs']['params'], data['input'][10:])
+        input_data = resolve_decoded_data(decoded_input, function_data['inputs']['abi'])
+
+        # decode output
+        decoded_output = decode_hex_data(function_data['outputs']['params'], data['output'])
+        output_data = resolve_decoded_data(decoded_output, function_data['outputs']['abi'])
+
         # format decoded log
         return {
             'item': {
-                'contract_address': 1
-            }
+                'contract_address': self.contract_address,
+                'function_name': function_data['name']
+            },
+            'context': {
+                'timestamp': data['timestamp'],
+                'block_number': data['block_number'],
+                'transaction_hash': data['transaction_hash'],
+                'transaction_position': data['transaction_position'],
+                'trace_index': data['trace_index'],
+                'trace_address': data['trace_address'],
+                'trace_type': data['trace_type'],
+                'confirmed': data['__confirmed']
+            },
+            'call_data': {
+                'call_type': 'transaction' if data['trace_index'] == 0 else 'internal_transaction',
+                'from_address': data['from_address'],
+                'to_address': self.contract_address,
+                'value': data['value'] // 10**18
+            },
+            'input_data': input_data,
+            'output_data': output_data
         }

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 import time
 
-from transpose.utils.exceptions import StreamConfigError
+from transpose.utils.exceptions import StreamError
 
 
 class Stream(ABC):
@@ -17,8 +17,8 @@ class Stream(ABC):
     def __init__(self, api_key: str,
                  start_block: int=0,
                  end_block: int=None,
-                 live_iterator: bool=False,
-                 live_iterator_refresh_interval: int=3) -> None:
+                 live_stream: bool=False,
+                 live_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -26,34 +26,34 @@ class Stream(ABC):
         :param api_key: The API key for the Transpose API.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param live_iterator: Whether to scroll the iterator when reaches live.
-        :param live_iterator_refresh_interval: The delay between scroll attempts in seconds.
+        :param live_stream: Whether to scroll the iterator when reaches live.
+        :param live_refresh_interval: The delay between scroll attempts in seconds.
         """
 
         self.api_key = api_key
         self.start_block = start_block
         self.end_block = end_block
-        self.live_iterator = live_iterator
-        self.live_iterator_refresh_interval = live_iterator_refresh_interval
+        self.live_stream = live_stream
+        self.live_refresh_interval = live_refresh_interval
         self.__state = None
         self.__it_idx = None
         self.__it_data = None
 
         # validate block range
         if not isinstance(start_block, int) or start_block < 0:
-            raise StreamConfigError('Invalid start block')
+            raise StreamError('Invalid start block')
         elif end_block is not None and (not isinstance(end_block, int) or end_block < start_block):
-            raise StreamConfigError('Invalid end block')
+            raise StreamError('Invalid end block')
 
         # validate scroll iterator
-        if not isinstance(live_iterator, bool):
-            raise StreamConfigError('Invalid scroll iterator')
-        elif live_iterator and end_block is not None:
-            raise StreamConfigError('Cannot scroll iterator when end block is specified')
+        if not isinstance(live_stream, bool):
+            raise StreamError('Invalid scroll iterator')
+        elif live_stream and end_block is not None:
+            raise StreamError('Cannot scroll iterator when end block is specified')
 
         # validate scroll delay
-        if not isinstance(live_iterator_refresh_interval, int) or live_iterator_refresh_interval < 0:
-            raise StreamConfigError('Invalid scroll delay')
+        if not isinstance(live_refresh_interval, int) or live_refresh_interval < 0:
+            raise StreamError('Invalid scroll delay')
 
 
     def __iter__(self) -> 'Stream':
@@ -94,9 +94,9 @@ class Stream(ABC):
                 self.__it_idx = 0
 
                 # if scroll iterator is enabled, wait for data
-                if len(self.__it_data) == 0 and self.live_iterator:
+                if len(self.__it_data) == 0 and self.live_stream:
                     while len(self.__it_data) == 0:
-                        time.sleep(self.live_iterator_refresh_interval)
+                        time.sleep(self.live_refresh_interval)
                         self.__it_data = self.__load_next_batch(None)
                 
                 # otherwise, raise StopIteration
@@ -131,10 +131,13 @@ class Stream(ABC):
         )
 
         # decode data
-        return [
-            self.decode(item) 
-            for item in data
-        ]
+        decoded_data = []
+        for item in data:
+            decoded_item = self.decode(item)
+            if decoded_item is not None:
+                decoded_data.append(decoded_item)
+
+        return decoded_data
 
 
     @abstractmethod

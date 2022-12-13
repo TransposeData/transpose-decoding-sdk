@@ -5,7 +5,7 @@ from transpose.stream.event import EventStream
 from transpose.stream.call import CallStream
 from transpose.sql.general import latest_block_query
 from transpose.utils.request import send_transpose_sql_request
-from transpose.utils.exceptions import DecoderConfigError
+from transpose.utils.exceptions import ContractError
 from transpose.utils.address import to_checksum_address
 
 
@@ -41,28 +41,28 @@ class TransposeDecodedContract:
 
         # validate contract address
         self.contract_address = to_checksum_address(contract_address)
-        if self.contract_address is None: raise DecoderConfigError('Invalid contract address')
+        if self.contract_address is None: raise ContractError('Invalid contract address')
 
         # validate ABI
-        if abi is None and abi_path is None: raise DecoderConfigError('ABI is required')
-        elif abi is not None and abi_path is not None: raise DecoderConfigError('Only one of ABI or ABI path can be supplied')
+        if abi is None and abi_path is None: raise ContractError('ABI is required')
+        elif abi is not None and abi_path is not None: raise ContractError('Only one of ABI or ABI path can be supplied')
         elif abi is not None: self.abi = abi
         elif abi_path is not None:
             try: self.abi = json.load(open(abi_path))
-            except: raise DecoderConfigError('Invalid ABI path')
+            except: raise ContractError('Invalid ABI path')
 
         # validate ABI object
-        if not isinstance(self.abi, list): raise DecoderConfigError('ABI must be a list of dicts')
-        elif not all([isinstance(item, dict) for item in self.abi]): raise DecoderConfigError('ABI must be a list of dicts')
+        if not isinstance(self.abi, list): raise ContractError('ABI must be a list of dicts')
+        elif not all([isinstance(item, dict) for item in self.abi]): raise ContractError('ABI must be a list of dicts')
 
         # validate chain
         self.chain = chain
         if chain not in ['ethereum', 'goerli', 'polygon']: 
-            raise DecoderConfigError('Invalid chain')
+            raise ContractError('Invalid chain')
 
         # validate API key
         if api_key is None or not isinstance(api_key, str) or len(api_key) <= 0: 
-            raise DecoderConfigError('Transpose API key is required')
+            raise ContractError('Transpose API key is required')
         self.api_key = api_key
         
         # run test query
@@ -76,8 +76,8 @@ class TransposeDecodedContract:
                       event_name: str=None,
                       start_block: int=None,
                       end_block: int=None,
-                      live_iterator: bool=False,
-                      live_iterator_refresh_interval: int=3) -> Stream:
+                      live_stream: bool=False,
+                      live_refresh_interval: int=3) -> Stream:
         
         """
         Initiate a stream for contract events.
@@ -85,17 +85,21 @@ class TransposeDecodedContract:
         :param event_name: The name of the event.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param live_iterator: Whether to continuously iterate over live data.
-        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param live_stream: Whether to stream live data.
+        :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
 
-        # get latest block number if no start block
-        if start_block is None:
+        # set start block to latest block if live
+        if start_block is None and live_stream:
             start_block = send_transpose_sql_request(
                 api_key=self.api_key,
                 query=latest_block_query(self.chain)
             )[0]['block_number'] + 1
+
+        # set start block to 0 if not live
+        elif start_block is None:
+            start_block = 0
 
         # return stream
         return EventStream(
@@ -106,8 +110,8 @@ class TransposeDecodedContract:
             event_name=event_name,
             start_block=start_block,
             end_block=end_block,
-            live_iterator=live_iterator,
-            live_iterator_refresh_interval=live_iterator_refresh_interval
+            live_stream=live_stream,
+            live_refresh_interval=live_refresh_interval
         )
 
 
@@ -115,8 +119,8 @@ class TransposeDecodedContract:
                      function_name: str=None,
                      start_block: int=None,
                      end_block: int=None,
-                     live_iterator: bool=False,
-                     live_iterator_refresh_interval: int=3) -> Stream:
+                     live_stream: bool=False,
+                     live_refresh_interval: int=3) -> Stream:
         
         """
         Initiate a stream for contract calls.
@@ -124,17 +128,25 @@ class TransposeDecodedContract:
         :param function_name: The name of the function.
         :param start_block: The starting block number.
         :param end_block: The ending block number.
-        :param live_iterator: Whether to continuously iterate over live data.
-        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param live_stream: Whether to stream live data.
+        :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
 
-        # get latest block number if no start block
-        if start_block is None:
+        # validate supported chains
+        if self.chain not in ['ethereum', 'goerli']:
+            raise ContractError('Contract calls are only supported on Ethereum and Goerli')
+
+        # set start block to latest block if live
+        if start_block is None and live_stream:
             start_block = send_transpose_sql_request(
                 api_key=self.api_key,
                 query=latest_block_query(self.chain)
             )[0]['block_number'] + 1
+
+        # set start block to 0 if not live
+        elif start_block is None:
+            start_block = 0
 
         # return stream
         return CallStream(
@@ -145,7 +157,7 @@ class TransposeDecodedContract:
             function_name=function_name,
             start_block=start_block,
             end_block=end_block,
-            live_iterator=live_iterator,
-            live_iterator_refresh_interval=live_iterator_refresh_interval
+            live_stream=live_stream,
+            live_refresh_interval=live_refresh_interval
         )
             

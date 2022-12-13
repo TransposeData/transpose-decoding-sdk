@@ -1,10 +1,11 @@
-from eth_event import get_topic_map, decode_log
 from typing import Tuple, List
+from eth_event import decode_log
 
 from transpose.stream.base import Stream
 from transpose.sql.events import events_query
-from transpose.utils.exceptions import StreamConfigError
+from transpose.utils.exceptions import StreamError
 from transpose.utils.request import send_transpose_sql_request
+from transpose.utils.decode import build_topic_map
 
 
 class EventStream(Stream):
@@ -18,8 +19,8 @@ class EventStream(Stream):
                  event_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
-                 live_iterator: bool=False,
-                 live_iterator_refresh_interval: int=3) -> None:
+                 live_stream: bool=False,
+                 live_refresh_interval: int=3) -> None:
 
         """
         Initialize the stream.
@@ -30,16 +31,16 @@ class EventStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
-        :param live_iterator: Whether to continuously iterate over live data.
-        :param live_iterator_refresh_interval: The interval between refreshing the data when live in seconds.
+        :param live_stream: Whether to stream live data.
+        :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         """
 
         super().__init__(
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
-            live_iterator=live_iterator,
-            live_iterator_refresh_interval=live_iterator_refresh_interval
+            live_stream=live_stream,
+            live_refresh_interval=live_refresh_interval
         )
 
         self.chain = chain
@@ -47,15 +48,14 @@ class EventStream(Stream):
         self.abi = abi
 
         # build topic map
-        try: self.topic_map = get_topic_map(self.abi)
-        except Exception as e:
-            raise StreamConfigError('Invalid ABI') from e
+        try: self.topic_map = build_topic_map(self.abi)
+        except Exception as e: raise StreamError('Invalid ABI') from e
 
         # get target event signature
         self.event_signature = None
         if event_name is not None:
             matching_event_signatures = [k for k, v in self.topic_map.items() if v['name'] == event_name]
-            if len(matching_event_signatures) != 1: raise StreamConfigError('Invalid event name')
+            if len(matching_event_signatures) != 1: raise StreamError('Invalid event name')
             self.event_signature = matching_event_signatures[0]
             
 
@@ -116,34 +116,34 @@ class EventStream(Stream):
         """
         Decode the raw log data into a decoded event. The decoded event
         is a dictionary with three fields: the item, the context, and
-        the data. The item field contains information on the target
-        activity, the context field contains information on the
-        context of the activity, and the data field contains the decoded
+        the event_data. The item field contains information on the target
+        activity, the context field contains information on the context 
+        of the activity, and the event_data field contains the decoded
         data from the log.
 
         :param data: The raw log data.
         :return: The decoded log.
         """
 
-        # format raw log
-        log = {
-            'address': data['address'],
-            'topics': [],
-            'data': data['data']
-        }
+        # check if log is in topic map
+        if data['topic_0'] not in self.topic_map: 
+            return None
 
-        # add topics
+        # compile non-null topics
+        topics = []
         for i in range(0, 4):
             if data[f'topic_{i}'] is not None:
-                log['topics'].append(data[f'topic_{i}'])
-
+                topics.append(data[f'topic_{i}'])
+        
         # decode log
-        decoded_log = decode_log(log, self.topic_map)
+        log = {'address': data['address'], 'topics': topics, 'data': data['data']}
+        try: decoded_log = decode_log(log, self.topic_map)
+        except Exception as e: raise StreamError('Failed to decode log') from e
 
         # format decoded log
         return {
             'item': {
-                'contract_address': decoded_log['address'],
+                'contract_address': self.contract_address,
                 'event_name': decoded_log['name']
             },
             'context': {
@@ -154,7 +154,7 @@ class EventStream(Stream):
                 'transaction_position': data['transaction_position'],
                 'confirmed': data['__confirmed']
             },
-            'event': {
+            'event_data': {
                 d['name']: d['value'] 
                 for d in decoded_log['data']
             }
