@@ -83,23 +83,22 @@ class TransposeDecodedContract:
         Initiate a stream for contract events.
 
         :param event_name: The name of the event.
-        :param start_block: The starting block number.
-        :param end_block: The ending block number.
+        :param start_block: The block to start streaming from, inclusive.
+        :param end_block: The block to stop streaming at, exclusive.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
 
-        # set start block to latest block if live
-        if start_block is None and live_stream:
-            start_block = send_transpose_sql_request(
-                api_key=self.api_key,
-                query=latest_block_query(self.chain)
-            )[0]['block_number'] + 1
-
-        # set start block to 0 if not live
-        elif start_block is None:
-            start_block = 0
+        # set start and stop blocks
+        next_block = self.__get_latest_block() + 1
+        if live_stream: 
+            start_block = min(start_block, next_block) if start_block is not None else next_block
+            end_block = None
+        else:
+            start_block = max(start_block, 0) if start_block is not None else 0
+            end_block = min(end_block, next_block) if end_block is not None else next_block
+            if start_block > end_block: raise ContractError('Invalid start and end blocks')
 
         # return stream
         return EventStream(
@@ -126,27 +125,22 @@ class TransposeDecodedContract:
         Initiate a stream for contract calls.
 
         :param function_name: The name of the function.
-        :param start_block: The starting block number.
-        :param end_block: The ending block number.
+        :param start_block: The block to start streaming from, inclusive.
+        :param end_block: The block to stop streaming at, exclusive.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
 
-        # validate supported chains
-        if self.chain not in ['ethereum', 'goerli']:
-            raise ContractError('Contract calls are only supported on Ethereum and Goerli')
-
-        # set start block to latest block if live
-        if start_block is None and live_stream:
-            start_block = send_transpose_sql_request(
-                api_key=self.api_key,
-                query=latest_block_query(self.chain)
-            )[0]['block_number'] + 1
-
-        # set start block to 0 if not live
-        elif start_block is None:
-            start_block = 0
+        # set start and stop blocks
+        next_block = self.__get_latest_block() + 1
+        if live_stream: 
+            start_block = min(start_block, next_block) if start_block is not None else next_block
+            end_block = None
+        else:
+            start_block = max(start_block, 0) if start_block is not None else 0
+            end_block = min(end_block, next_block) if end_block is not None else next_block
+            if start_block > end_block: raise ContractError('Invalid start and end blocks')
 
         # return stream
         return CallStream(
@@ -160,4 +154,16 @@ class TransposeDecodedContract:
             live_stream=live_stream,
             live_refresh_interval=live_refresh_interval
         )
-            
+    
+
+    def __get_latest_block(self) -> int:
+        """
+        Get the latest block number for the current chain.
+
+        :return: The latest block number.
+        """
+
+        return send_transpose_sql_request(
+            api_key=self.api_key,
+            query=latest_block_query(self.chain)
+        )[0]['block_number']
