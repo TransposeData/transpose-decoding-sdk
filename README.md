@@ -2,23 +2,23 @@
 
 The Transpose Decoding SDK is a Python package that makes decoding contract activity on EVM blockchains as simple as possible. Simply specify a contract address and ABI to start streaming historical or live acitivty across decoded events, transactions, and traces.
 
-## Introduction
+## Features
 
-In general, contract activity includes both events emitted by the contract and calls to the contract's functions (transactions and traces). There exist several major problems when it comes to decoding and streaming this activity:
+- **Simple interface**: Simple, minimal code interface to stream decoded events or calls.
+- **High performance**: Streaming benchmarked at 3,000+ items per second.
+- **Live and historical**: Stream decoded activity between historical block ranges or live with a ~3s delay from nodes.
+- **Automatic decoding**: Automatically decode inputs/outputs for transactions and traces, and logs for events.
+- **Full traces support**: Decode traces (a.k.a. internal transactions) just like transactions in the correct order.
+- **Multi-chain**: Supports Ethereum, Polygon, and Goerli with additional chains coming soon.
+- **Function and event filtering**: Stream all events or functions in an ABI or specify a specific event or function name.
 
-1. Using the RPC API (the current approach) is very slow and complex.
-2. There is no way to bulk stream historical activity.
-3. No availability for filtering transactions by contract and function.
-4. No support for traces (a.k.a. internal transactions) whatsoever.
-5. No automated decoding of transaction/traces inputs and outputs.
+## Setup
 
-The SDK provides a very simple interface to stream this decoded activity historically and live using just a contract address, ABI, and Transpose API key.
-
-## Retrieving an API key
+### Retrieving an API key
 
 To use the SDK, you will need an API key for Transpose. You can sign up for a free API key by visting the [Transpose App](https://app.transpose.io). If you have any questions on getting started, feature requests, or contributing to the SDK, please reach out to us on [Discord](http://discord.gg/transpose).
 
-## Installation
+### Installation
 
 To install the package, run the following command in your Python environment:
 
@@ -31,3 +31,8 @@ The SDK requires Python 3.6 or higher and has only 3 dependencies:
 - `eth-event`
 - `pip-chill`
 - `web3`
+
+## Getting Started
+
+### Streaming Events
+
