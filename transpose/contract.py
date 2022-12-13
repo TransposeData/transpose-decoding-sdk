@@ -76,7 +76,7 @@ class TransposeDecodedContract:
                       event_name: str=None,
                       start_block: int=None,
                       end_block: int=None,
-                      live_stream: bool=False,
+                      live_stream: bool=True,
                       live_refresh_interval: int=3) -> Stream:
         
         """
@@ -118,7 +118,7 @@ class TransposeDecodedContract:
                      function_name: str=None,
                      start_block: int=None,
                      end_block: int=None,
-                     live_stream: bool=False,
+                     live_stream: bool=True,
                      live_refresh_interval: int=3) -> Stream:
         
         """
