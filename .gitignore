@@ -5,3 +5,4 @@ __pycache__
 dist
 transpose_decoding_sdk.egg-info
 test.py
+DEPLOY.md
