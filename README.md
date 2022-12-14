@@ -106,7 +106,7 @@ stream = contract.stream_events(
 )
 ```
 
-#### Output Format
+#### Event Format
 
 Each event from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, and `event_data` fields. The `target` field contains information about the contract and event that was decoded, while the `context` field contains information about the block and transaction that the event was emitted in. The `event_data` field contains the decoded event data.
 
@@ -186,7 +186,7 @@ stream = contract.stream_calls(
 )
 ```
 
-#### Output Format
+#### Call Format
 
 Each call from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, `call_data`, `input_data`, and `output_data` fields. The `target` field contains information about the contract and function that was decoded, while the `context` field contains information about the block, transaction, and trace that the call was made in. The `call_data` field contains the decoded call data, while the `input_data` and `output_data` fields contain the decoded input and output data, respectively.
 
