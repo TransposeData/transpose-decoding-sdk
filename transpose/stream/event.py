@@ -1,11 +1,11 @@
 from typing import Tuple, List
-from eth_event import decode_log
 
 from transpose.stream.base import Stream
 from transpose.sql.events import events_query
 from transpose.utils.exceptions import StreamError
 from transpose.utils.request import send_transpose_sql_request
-from transpose.utils.decode import build_topic_map
+from transpose.utils.decode import build_topic_map, decode_hex_data, resolve_decoded_data
+from transpose.utils.time import to_iso_timestamp
 
 
 class EventStream(Stream):
@@ -126,36 +126,43 @@ class EventStream(Stream):
         """
 
         # check if log is in topic map
-        if data['topic_0'] not in self.topic_map: 
-            return None
-
-        # compile non-null topics
-        topics = []
-        for i in range(0, 4):
-            if data[f'topic_{i}'] is not None:
-                topics.append(data[f'topic_{i}'])
+        if data['topic_0'] not in self.topic_map: return None
+        target_topic = self.topic_map[data['topic_0']]
         
-        # decode log
-        log = {'address': data['address'], 'topics': topics, 'data': data['data']}
-        try: decoded_log = decode_log(log, self.topic_map)
-        except Exception as e: raise StreamError('Failed to decode log') from e
+        # decode topics
+        try:
+            topics_data = '0x' + ''.join(data[f'topic_{i}'][2:] for i in range(1, 4) if data[f'topic_{i}'] is not None)
+            decoded_topics = decode_hex_data(target_topic['topics']['types'], topics_data)
+            topics_data = resolve_decoded_data(target_topic['topics']['params'], decoded_topics)
+        except Exception as e: 
+            raise StreamError('Failed to decode log') from e
+
+        # decode data
+        try:
+            decoded_data = decode_hex_data(target_topic['data']['types'], data['data'])
+            data_data = resolve_decoded_data(target_topic['data']['params'], decoded_data)
+        except Exception as e: 
+            raise StreamError('Failed to decode data') from e
+
+        # order event data
+        event_data = dict(sorted(
+            {**topics_data, **data_data}.items(), 
+            key=lambda item: target_topic['order'].index(item[0])
+        ))
 
         # format decoded log
         return {
             'item': {
                 'contract_address': self.contract_address,
-                'event_name': decoded_log['name']
+                'event_name': target_topic['name']
             },
             'context': {
-                'timestamp': data['timestamp'],
+                'timestamp': to_iso_timestamp(data['timestamp']),
                 'block_number': data['block_number'],
                 'log_index': data['log_index'],
                 'transaction_hash': data['transaction_hash'],
                 'transaction_position': data['transaction_position'],
                 'confirmed': data['__confirmed']
             },
-            'event_data': {
-                d['name']: d['value'] 
-                for d in decoded_log['data']
-            }
+            'event_data': event_data
         }

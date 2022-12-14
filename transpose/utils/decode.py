@@ -33,7 +33,7 @@ def extract_params(abi_params: List[dict]) -> List[str]:
 def build_function_map(abi: List[dict]) -> Dict[str, dict]:
     """
     Builds a dictionary that maps function selectors to the 
-    function name and parameter types.
+    function name, types, and params.
 
     :param abi: The ABI.
     :return: The function map.
@@ -45,13 +45,15 @@ def build_function_map(abi: List[dict]) -> Dict[str, dict]:
         elif 'name' not in item: continue
         function_map[get_log_topic(item)[:10]] = {
             'name': item['name'],
+            'input_order': [i['name'] for i in item['inputs']],
+            'output_order': [i['name'] for i in item['outputs']],
             'inputs': {
-                'params': extract_params(item['inputs']),
-                'abi': item['inputs']
+                'types': extract_params(item['inputs']),
+                'params': item['inputs']
             },
             'outputs': {
-                'params': extract_params(item['outputs']),
-                'abi': item['outputs']
+                'types': extract_params(item['outputs']),
+                'params': item['outputs']
             }
         }
 
@@ -60,8 +62,8 @@ def build_function_map(abi: List[dict]) -> Dict[str, dict]:
 
 def build_topic_map(abi: List[dict]) -> Dict[str, dict]:
     """
-    Builds a dictionary that maps event topics to the event name
-    and parameter types.
+    Builds a dictionary that maps event topics to the event name,
+    types, and params.
 
     :param abi: The ABI.
     :return: The topic map.
@@ -73,45 +75,58 @@ def build_topic_map(abi: List[dict]) -> Dict[str, dict]:
         elif 'name' not in item: continue
         topic_map[get_log_topic(item)] = {
             'name': item['name'],
-            'params': extract_params(item['inputs']),
-            'inputs': item['inputs']
+            'order': [i['name'] for i in item['inputs']],
+            'topics': {
+                'types': extract_params([i for i in item['inputs'] if i['indexed']]),
+                'params': [i for i in item['inputs'] if i['indexed']]
+            },
+            'data': {
+                'types': extract_params([i for i in item['inputs'] if not i['indexed']]),
+                'params': [i for i in item['inputs'] if not i['indexed']]
+            }
         }
 
     return topic_map
 
 
-def decode_hex_data(params: List[str], hex_data: str) -> tuple:
+def decode_hex_data(types: List[str], hex_data: str) -> tuple:
     """
     Decodes the data hex string into a tuple of the parameters.
 
-    :param params: The list of parameter types.
+    :param types: The list of parameter types.
     :param data: The data hex string.
     :return: The decoded tuple.
     """
 
+    if hex_data is None: return tuple()
     data = decode_hex(hex_data)
-    decoded_data = decode_abi(params, data)
+    decoded_data = decode_abi(types, data)
     return decoded_data
 
 
-def resolve_decoded_data(decoded_data: tuple, abi_params: List[dict]) -> dict:
+def resolve_decoded_data(abi_params: List[dict], decoded_data: tuple) -> dict:
     """
     Resolve the decoded data tuple from an eth_abi.decode_abi call
     and the ABI parameters to a dictionary of the parameter names and
     values.
 
-    :param decoded_data: The decoded data tuple.
     :param abi_params: The ABI parameters.
+    :param decoded_data: The decoded data tuple.
     :return: The dictionary of parameter names and values.
     """
 
+    # enforce that the number of params matches the number of decoded items
+    if len(abi_params) != len(decoded_data):
+        raise ValueError('Length of decoded items does not match the number of ABI parameters')
+
+    # recursively resolve the params and decoded items
     decoded_params = {}
-    for decoded_item, abi_item in zip(decoded_data, abi_params):
+    for abi_item, decoded_item in zip(abi_params, decoded_data):
         if abi_item['type'] == 'tuple': 
-            decoded_tuple_params = resolve_decoded_data(decoded_item, abi_item['components'])
+            decoded_tuple_params = resolve_decoded_data(abi_item['components'], decoded_item)
             decoded_params[abi_item['name']] = decoded_tuple_params
         elif abi_item['type'] == 'tuple[]': 
-            decoded_tuple_array_params = [resolve_decoded_data(i, abi_item['components']) for i in decoded_item]
+            decoded_tuple_array_params = [resolve_decoded_data(abi_item['components'], i) for i in decoded_item]
             decoded_params[abi_item['name']] = decoded_tuple_array_params
         elif abi_item['type'].endswith('[][]'):
             raise NotImplementedError('Nested arrays are not supported')

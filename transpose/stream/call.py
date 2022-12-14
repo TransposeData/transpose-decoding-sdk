@@ -5,6 +5,7 @@ from transpose.sql.calls import calls_query
 from transpose.utils.exceptions import StreamError
 from transpose.utils.request import send_transpose_sql_request
 from transpose.utils.decode import build_function_map, decode_hex_data, resolve_decoded_data
+from transpose.utils.time import to_iso_timestamp
 
 
 class CallStream(Stream):
@@ -131,26 +132,43 @@ class CallStream(Stream):
 
         # check if function selector is in function map
         function_selector = data['input'][:10]
-        if function_selector not in self.function_map: 
-            return None
+        if function_selector not in self.function_map: return None
+        target_function = self.function_map[function_selector]
 
         # decode input
-        function_data = self.function_map[function_selector]
-        decoded_input = decode_hex_data(function_data['inputs']['params'], data['input'][10:])
-        input_data = resolve_decoded_data(decoded_input, function_data['inputs']['abi'])
+        try:
+            decoded_input = decode_hex_data(target_function['inputs']['types'], '0x' + data['input'][10:])
+            input_data = resolve_decoded_data(target_function['inputs']['params'], decoded_input)
+        except Exception as e:
+            raise StreamError('Failed to decode input data') from e
+
+        # order input data
+        input_data = dict(sorted(
+            __iterable=input_data.items(),
+            key=lambda item: target_function['input_order'].index(item[0])
+        ))
 
         # decode output
-        decoded_output = decode_hex_data(function_data['outputs']['params'], data['output'])
-        output_data = resolve_decoded_data(decoded_output, function_data['outputs']['abi'])
+        try:
+            decoded_output = decode_hex_data(target_function['outputs']['types'], data['output'])
+            output_data = resolve_decoded_data(target_function['outputs']['params'], decoded_output)
+        except Exception as e:
+            raise StreamError('Failed to decode output data') from e
+
+        # order output data
+        output_data = dict(sorted(
+            output_data.items(),
+            key=lambda item: target_function['output_order'].index(item[0])
+        ))
 
         # format decoded log
         return {
             'item': {
                 'contract_address': self.contract_address,
-                'function_name': function_data['name']
+                'function_name': target_function['name']
             },
             'context': {
-                'timestamp': data['timestamp'],
+                'timestamp': to_iso_timestamp(data['timestamp']),
                 'block_number': data['block_number'],
                 'transaction_hash': data['transaction_hash'],
                 'transaction_position': data['transaction_position'],
@@ -163,7 +181,7 @@ class CallStream(Stream):
                 'call_type': 'transaction' if data['trace_index'] == 0 else 'internal_transaction',
                 'from_address': data['from_address'],
                 'to_address': self.contract_address,
-                'value': data['value'] // 10**18
+                'eth_value': data['value'] // 10**18
             },
             'input_data': input_data,
             'output_data': output_data

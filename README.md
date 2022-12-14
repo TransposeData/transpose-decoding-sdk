@@ -26,11 +26,12 @@ To install the package, run the following command in your Python environment:
 pip install transpose-decoding-sdk
 ```
 
-The SDK requires Python 3.6 or higher and has only 3 dependencies:
+The SDK requires Python 3.6 or higher and has only 4 dependencies:
 
 - `eth-event`
 - `pip-chill`
 - `web3`
+- `dateutils`
 
 ## Getting Started
 
@@ -53,20 +54,22 @@ contract = TransposeDecodedContract(
 
 If you already have the ABI loaded into your Python application, you can pass it directly to the `abi` parameter instead of specifying a path to the ABI file.
 
-### Streaming Events
+### Stream Events
 
-To stream events, simply use the `stream_events` methods to generate a new stream. By default, this will start streaming all events in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream activity with an iterator or by calling `next` on the stream with the number of items to return:
+To stream events, simply use the `stream_events` methods to generate a new stream. By default, this will start streaming all events in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream with an iterator or by calling `next` on the stream with the number of items to return:
 
 ```python
 stream = contract.stream_events()
 
-# read stream with iterator
+# read stream with iterator -> returns a single event per loop
 for event in stream:
     print(event)
 
-# read stream with `next`
+# read stream with `next` -> returns a list of events
 print(stream.next(10))
 ```
+
+#### Block Range
 
 To stream a specific block range, you can specify the `from_block` and `to_block` parameters. The `from_block` parameter is inclusive, while the `to_block` parameter is exclusive. For example, the following code will stream events from block 15M to 16M:
 
@@ -77,6 +80,8 @@ stream = contract.stream_events(
 )
 ```
 
+#### Event Filtering
+
 To stream only a specific event, you can specify the `event_name` parameter:
 
 ```python
@@ -84,3 +89,46 @@ stream = contract.stream_events(
     event_name='OrderFulfilled
 )
 ```
+
+#### Live Streaming
+
+In order to stream live data, you can specify the `live_stream` parameter. If you combine this with the iterator for reading the stream, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
+
+```python
+stream = contract.stream_events(
+    live_stream=True
+)
+
+for event in stream:
+    print(event)
+```
+
+#### Output Format
+
+Each event from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, and `event_data` fields. The `target` key contains information about the contract and event that was decoded, while the `context` key contains information about the block and transaction that the event was emitted in. The `event_data` key contains the decoded event data.
+
+```python
+{
+    'item': {
+        'contract_address': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 
+        'event_name': 'Transfer'
+    }, 
+    'context': {
+        'timestamp': datetime.datetime(2018, 1, 10, 12, 32, 45, tzinfo=datetime.timezone.utc), 
+        'block_number': 4885242, 
+        'log_index': 35, 
+        'transaction_hash': '0x12968bdfc268efaae78a2c1193412ee2d0116a29b85182c7f77a476f6bd2b527', 
+        'transaction_position': 197, 
+        'confirmed': True
+    }, 
+    'event_data': {
+        'src': '0x004075e4d4b1ce6c48c81cc940e2bad24b489e64', 
+        'dst': '0x14fbca95be7e99c15cc2996c6c9d841e54b79425', 
+        'wad': 8000000000000000000
+    }
+}
+```
+
+### Stream Calls
+
+Streaming calls with the SDK includes both transactions and internal transactions (traces) 

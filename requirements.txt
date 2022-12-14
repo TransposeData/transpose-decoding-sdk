@@ -1,3 +1,4 @@
+dateutils
 eth-event
 pip-chill
 web3
