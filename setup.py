@@ -2,15 +2,15 @@ from setuptools import find_packages, setup
 with open('README.md', 'r') as f: long_description = f.read()
     
 setup(
-    name='transpose_defi_sdk',
-    version='1.0.1',
+    name='transpose_decoding_sdk',
+    version='1.0.0',
     
     # meta
     long_description=long_description,
     long_description_content_type='text/markdown',
     include_package_data=True,
-    description='The Transpose DeFi SDK is a simple Python package for performing multi-chain DeFi analysis using the real-time Transpose SQL API.',
-    keywords=['web3', 'defi', 'ethereum', 'transpose', 'prices', 'ohlc', 'data', 'analysis', 'blockchain', 'polygon'],
+    description='The Transpose Decoding SDK is a Python package that makes decoding contract activity on EVM blockchains as simple as possible. Simply specify a contract address and ABI to start streaming historical or live activity across decoded logs, transactions, and traces.',
+    keywords=['web3', 'defi', 'ethereum', 'transpose', 'polygon', 'goerli', 'abi', 'decode', 'event', 'log', 'traces', 'rpc', 'api'],
     license='MIT',
     
     # classifiers
@@ -25,7 +25,7 @@ setup(
     ],
 
     # homepage
-    url='https://github.com/TransposeData/transpose-defi-sdk',
+    url='https://github.com/TransposeData/transpose-decoding-sdk',
     
     # author
     author='Alex Langshur (alangshur)',
@@ -36,9 +36,9 @@ setup(
 
     # dependencies
     install_requires=[
-        'pandas',
+        'eth-event',
         'pip-chill',
-        'plotly',
+        'dateutils',
         'web3'
     ]
 )
