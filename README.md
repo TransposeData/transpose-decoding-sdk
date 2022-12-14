@@ -132,6 +132,8 @@ Each event from the stream will be returned as a dictionary with the same struct
 }
 ```
 
+In the example above, the `context.confirmed` field indicates whether the block containing the event has been confirmed by the network.
+
 ### Stream Calls
 
 The call streaming routine will stream and decode transactions and traces (a.k.a. internal transactions) to the contract's functions. To use it, simply use the `stream_calls` method to generate a new stream. By default, this will start streaming all calls in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream with an iterator or by calling `next` with the number of calls to return:
@@ -205,21 +207,23 @@ Each call from the stream will be returned as a dictionary with the same structu
         'confirmed': True
     }, 
     'call_data': {
-        'call_type': 'internal_transaction', 
+        'type': 'internal_transaction', 
         'from_address': '0x2339d36BCe71c97772e54C76fF6b4C74C9DD8f86', 
         'to_address': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 
         'eth_value': 0
     }, 
     'input_data': {
         'wad': 6640125949176909399
-    }, 
+    },
     'output_data': {}
 }
 ```
 
+In the example above, the `context.confirmed` field indicates whether the block containing the event has been confirmed by the network. Additionally, the `call.type` field will either be set to `transaction` or `internal_transaction` depending on whether the call was a transaction or trace, respectively. If the call was a transaction, the `trace_index` will be zero, the `trace_address` will be an empty list, and the `trace_type` will be `call`.
+
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Citations
 
@@ -233,6 +237,6 @@ If you use this library in your research, please cite it as:
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/TransposeData/transpose-decoding-sdk}},
-  commit = {4f57d6a0e4c030202a07a60bc1bb1ed1544bf679}
+  commit = {64dc9c870df4326b07009876cdfdf749e882d191}
 }
 ```

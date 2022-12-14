@@ -178,7 +178,7 @@ class CallStream(Stream):
                 'confirmed': data['__confirmed']
             },
             'call_data': {
-                'call_type': 'transaction' if data['trace_index'] == 0 else 'internal_transaction',
+                'type': 'transaction' if data['trace_index'] == 0 else 'internal_transaction',
                 'from_address': data['from_address'],
                 'to_address': self.contract_address,
                 'eth_value': data['value'] // 10**18
