@@ -56,7 +56,7 @@ If you already have the ABI loaded into your Python application, you can pass it
 
 ### Stream Events
 
-To stream events, simply use the `stream_events` methods to generate a new stream. By default, this will start streaming all events in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream with an iterator or by calling `next` on the stream with the number of items to return:
+The event streaming routine will stream and decode events emitted by the contract. To use it, simply use the `stream_events` method to generate a new stream. By default, this will start streaming all events in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream with an iterator or by calling `next` with the number of events to return:
 
 ```python
 stream = contract.stream_events()
@@ -82,21 +82,21 @@ stream = contract.stream_events(
 
 #### Live Streaming
 
-In order to stream live data, you can specify the `live_stream` parameter. If you combine this with a stream iterator, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
+In order to stream live data, you can specify the `live_stream` parameter. If you use this parameter with a stream iterator, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
 
 ```python
 stream = contract.stream_events(
     live_stream=True
 )
 
-# iterate over new events as they are added to the blockchain
+# continuously iterate over new events
 for event in stream:
     print(event)
 ```
 
 #### Event Filtering
 
-To stream only a specific event, you can specify the `event_name` parameter. You may freely combine this with the other parameters to further filter by block range and stream the activity live:
+To stream only a specific event, you can specify the `event_name` parameter. You may combine this with the other parameters to further filter by block range and stream the activity live:
 
 ```python
 stream = contract.stream_events(
@@ -108,7 +108,7 @@ stream = contract.stream_events(
 
 #### Output Format
 
-Each event from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, and `event_data` fields. The `target` key contains information about the contract and event that was decoded, while the `context` key contains information about the block and transaction that the event was emitted in. The `event_data` key contains the decoded event data.
+Each event from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, and `event_data` fields. The `target` field contains information about the contract and event that was decoded, while the `context` field contains information about the block and transaction that the event was emitted in. The `event_data` field contains the decoded event data.
 
 ```python
 {
@@ -134,4 +134,105 @@ Each event from the stream will be returned as a dictionary with the same struct
 
 ### Stream Calls
 
-Streaming calls with the SDK includes both transactions and internal transactions (traces) 
+The call streaming routine will stream and decode transactions and traces (a.k.a. internal transactions) to the contract's functions. To use it, simply use the `stream_calls` method to generate a new stream. By default, this will start streaming all calls in the ABI from the genesis block and will stop once it reaches the latest block. You can consume the stream with an iterator or by calling `next` with the number of calls to return:
+
+```python
+stream = contract.stream_calls()
+
+# read stream with iterator -> returns a single call per loop
+for call in stream:
+    print(call)
+
+# read stream with `next` -> returns a list of calls
+print(stream.next(10))
+```
+
+#### Block Range
+
+To stream a specific block range, you can specify the `from_block` and `to_block` parameters. The `from_block` parameter is inclusive, while the `to_block` parameter is exclusive. For example, the following code will stream calls from block 15M to 16M:
+
+```python
+stream = contract.stream_calls(
+    from_block=16000000,
+    to_block=17000000
+)
+```
+
+#### Live Streaming
+
+In order to stream live data, you can specify the `live_stream` parameter. If you use this parameter with a stream iterator, it will continously stream new calls as they are added to the blockchain (with a ~3s delay from nodes):
+
+```python
+stream = contract.stream_calls(
+    live_stream=True
+)
+
+# continuously iterate over new calls
+for call in stream:
+    print(call)
+```
+
+#### Call Filtering
+
+To stream only a specific function call, for both transactions and internal transactions, you can specify the `function_name` parameter. You may combine this with the other parameters to further filter by block range and stream the activity live:
+
+```python
+stream = contract.stream_calls(
+    function_name='transfer',
+    start_block=16000000,
+    live_stream=True
+)
+```
+
+#### Output Format
+
+Each call from the stream will be returned as a dictionary with the same structure, containing `target`, `context`, `call_data`, `input_data`, and `output_data` fields. The `target` field contains information about the contract and function that was decoded, while the `context` field contains information about the block, transaction, and trace that the call was made in. The `call_data` field contains the decoded call data, while the `input_data` and `output_data` fields contain the decoded input and output data, respectively.
+
+```python
+{
+    'item': {
+        'contract_address': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 
+        'function_name': 'withdraw'
+    }, 
+    'context': {
+        'timestamp': datetime.datetime(2022, 6, 21, 2, 28, 20, tzinfo=datetime.timezone.utc), 
+        'block_number': 15000000, 
+        'transaction_hash': '0x3b5abcc2e67901638b944f5db15f5b13231b5392a6d6c4115407d9106136ac2f', 
+        'transaction_position': 5, 
+        'trace_index': 5, 
+        'trace_address': [0, 2, 0], 
+        'trace_type': 'call', 
+        'confirmed': True
+    }, 
+    'call_data': {
+        'call_type': 'internal_transaction', 
+        'from_address': '0x2339d36BCe71c97772e54C76fF6b4C74C9DD8f86', 
+        'to_address': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 
+        'eth_value': 0
+    }, 
+    'input_data': {
+        'wad': 6640125949176909399
+    }, 
+    'output_data': {}
+}
+```
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## Citations
+
+If you use this library in your research, please cite it as:
+
+```bibtex
+@misc{transpose-decoding-sdk,
+  author = {Alex Langshur},
+  title = {Transpose Decoding SDK},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/TransposeData/transpose-decoding-sdk}},
+  commit = {4f57d6a0e4c030202a07a60bc1bb1ed1544bf679}
+}
+```

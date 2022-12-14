@@ -144,7 +144,7 @@ class CallStream(Stream):
 
         # order input data
         input_data = dict(sorted(
-            __iterable=input_data.items(),
+            input_data.items(),
             key=lambda item: target_function['input_order'].index(item[0])
         ))
 
