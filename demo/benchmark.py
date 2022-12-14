@@ -23,14 +23,11 @@ def benchmark_demo(api_key: str) -> None:
     )
 
     # build call stream
-    stream = contract.stream_events(
-        start_block=0,
-        live_stream=False
-    )
+    stream = contract.stream_events()
 
     # iterate over stream
     t1 = time.time()
     counter = 0
     for _ in stream:
         counter += 1
-        print('\rEPS: {}\t'.format(round(counter / (time.time() - t1), 3)), end='')
+        print(f'\rEPS: {counter / (time.time() - t1)}\t', end='')

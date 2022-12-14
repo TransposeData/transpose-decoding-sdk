@@ -21,7 +21,9 @@ def live_seaport_calls_demo(api_key: str) -> None:
     )
 
     # build call stream
-    stream = contract.stream_calls()
+    stream = contract.stream_calls(
+        live_stream=True
+    )
 
     # iterate over stream
     for call in stream:

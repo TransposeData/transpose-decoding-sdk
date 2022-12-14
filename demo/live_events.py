@@ -22,7 +22,8 @@ def live_seaport_events_demo(api_key: str) -> None:
 
     # build call stream
     stream = contract.stream_events(
-        event_name='OrderFulfilled'
+        event_name='OrderFulfilled',
+        live_stream=True
     )
 
     # iterate over stream
