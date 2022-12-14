@@ -80,27 +80,30 @@ stream = contract.stream_events(
 )
 ```
 
-#### Event Filtering
-
-To stream only a specific event, you can specify the `event_name` parameter:
-
-```python
-stream = contract.stream_events(
-    event_name='OrderFulfilled
-)
-```
-
 #### Live Streaming
 
-In order to stream live data, you can specify the `live_stream` parameter. If you combine this with the iterator for reading the stream, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
+In order to stream live data, you can specify the `live_stream` parameter. If you combine this with a stream iterator, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
 
 ```python
 stream = contract.stream_events(
     live_stream=True
 )
 
+# iterate over new events as they are added to the blockchain
 for event in stream:
     print(event)
+```
+
+#### Event Filtering
+
+To stream only a specific event, you can specify the `event_name` parameter. You may freely combine this with the other parameters to further filter by block range and stream the activity live:
+
+```python
+stream = contract.stream_events(
+    event_name='OrderFulfilled,
+    start_block=16000000,
+    live_stream=True
+)
 ```
 
 #### Output Format
