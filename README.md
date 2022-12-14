@@ -1,4 +1,4 @@
-# transpose-decoding-sdk
+# Transpose Decoding SDK
 
 The Transpose Decoding SDK is a Python package that makes decoding contract activity on EVM blockchains as simple as possible. Simply specify a contract address and ABI to start streaming historical or live activity across decoded logs, transactions, and traces.
 
