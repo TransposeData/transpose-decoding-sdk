@@ -10,7 +10,7 @@ The Transpose Decoding SDK is a Python package that makes decoding contract acti
 - **Live & historical**: Stream activity in a historical block range or live with a ~3s delay from nodes.
 - **Full traces support**: Stream decoded traces (a.k.a. internal transactions) with no added complexity.
 - **Multi-chain**: Supports Ethereum, Polygon, and Goerli with additional chains coming soon.
-- **Event & function filtering**: Stream all activity from a contract or specify specific event or function names.
+- **Event & function filtering**: Stream all activity from a contract or specify event and function names.
 
 ## Setup
 
