@@ -76,6 +76,7 @@ class TransposeDecodedContract:
                       event_name: str=None,
                       start_block: int=None,
                       end_block: int=None,
+                      order: str='asc',
                       live_stream: bool=False,
                       live_refresh_interval: int=3) -> Stream:
         
@@ -85,10 +86,17 @@ class TransposeDecodedContract:
         :param event_name: The name of the event.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the events in.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
+
+        # check order
+        if order not in ['asc', 'desc']: 
+            raise ContractError('Invalid order (must be one of "asc" or "desc")')
+        elif order == 'desc' and live_stream:
+            raise ContractError('Cannot stream in descending order when live')
 
         # set start and stop blocks
         next_block = self.__get_latest_block() + 1
@@ -96,9 +104,14 @@ class TransposeDecodedContract:
             start_block = min(start_block, next_block) if start_block is not None else next_block
             end_block = None
         else:
-            start_block = max(start_block, 0) if start_block is not None else 0
-            end_block = min(end_block, next_block) if end_block is not None else next_block
-            if start_block > end_block: raise ContractError('Invalid start and end blocks')
+            if order == 'asc':
+                start_block = max(start_block, 0) if start_block is not None else 0
+                end_block = min(end_block, next_block) if end_block is not None else next_block
+                if start_block > end_block: raise ContractError('Invalid start and end blocks')
+            else:
+                start_block = min(start_block, next_block) if start_block is not None else next_block
+                end_block = max(end_block, 0) if end_block is not None else 0
+                if start_block < end_block: raise ContractError('Invalid start and end blocks')
 
         # return stream
         return EventStream(
@@ -109,6 +122,7 @@ class TransposeDecodedContract:
             event_name=event_name,
             start_block=start_block,
             end_block=end_block,
+            order=order,
             live_stream=live_stream,
             live_refresh_interval=live_refresh_interval
         )
@@ -118,6 +132,7 @@ class TransposeDecodedContract:
                      function_name: str=None,
                      start_block: int=None,
                      end_block: int=None,
+                     order: str='asc',
                      live_stream: bool=False,
                      live_refresh_interval: int=3) -> Stream:
         
@@ -127,10 +142,17 @@ class TransposeDecodedContract:
         :param function_name: The name of the function.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the calls in.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         :return: A Stream object.
         """
+
+        # check order
+        if order not in ['asc', 'desc']: 
+            raise ContractError('Invalid order (must be one of "asc" or "desc")')
+        elif order == 'desc' and live_stream:
+            raise ContractError('Cannot stream in descending order when live')
 
         # set start and stop blocks
         next_block = self.__get_latest_block() + 1
@@ -138,9 +160,14 @@ class TransposeDecodedContract:
             start_block = min(start_block, next_block) if start_block is not None else next_block
             end_block = None
         else:
-            start_block = max(start_block, 0) if start_block is not None else 0
-            end_block = min(end_block, next_block) if end_block is not None else next_block
-            if start_block > end_block: raise ContractError('Invalid start and end blocks')
+            if order == 'asc':
+                start_block = max(start_block, 0) if start_block is not None else 0
+                end_block = min(end_block, next_block) if end_block is not None else next_block
+                if start_block > end_block: raise ContractError('Invalid start and end blocks')
+            else:
+                start_block = min(start_block, next_block) if start_block is not None else next_block
+                end_block = max(end_block, 0) if end_block is not None else 0
+                if start_block < end_block: raise ContractError('Invalid start and end blocks')
 
         # return stream
         return CallStream(
@@ -151,6 +178,7 @@ class TransposeDecodedContract:
             function_name=function_name,
             start_block=start_block,
             end_block=end_block,
+            order=order,
             live_stream=live_stream,
             live_refresh_interval=live_refresh_interval
         )

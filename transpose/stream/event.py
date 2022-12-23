@@ -19,6 +19,7 @@ class EventStream(Stream):
                  event_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
+                 order: str='asc',
                  live_stream: bool=False,
                  live_refresh_interval: int=3) -> None:
 
@@ -31,6 +32,7 @@ class EventStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the events in.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         """
@@ -39,6 +41,7 @@ class EventStream(Stream):
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
+            order=order,
             live_stream=live_stream,
             live_refresh_interval=live_refresh_interval
         )
@@ -76,6 +79,7 @@ class EventStream(Stream):
     
     def fetch(self, state: dict,
               stop_block: int=None,
+              order: str='asc',
               limit: int=None) -> Tuple[List[dict], dict]:
 
         """
@@ -84,6 +88,7 @@ class EventStream(Stream):
 
         :param state: The current stream state.
         :param stop_block: The block to stop fetching at, exclusive.
+        :param order: The order to fetch the events in.
         :param limit: The maximum number of events to fetch.
         """
 
@@ -95,6 +100,7 @@ class EventStream(Stream):
             from_log_index=state['log_index'],
             topic_0=self.event_signature,
             stop_block=stop_block,
+            order=order,
             limit=limit
         )
 
@@ -106,8 +112,16 @@ class EventStream(Stream):
 
         # update state
         if len(data) > 0:
-            state['block_number'] = data[-1]['block_number']
-            state['log_index'] = data[-1]['log_index'] + 1
+            if order == 'asc':
+                state['block_number'] = data[-1]['block_number']
+                state['log_index'] = data[-1]['log_index'] + 1
+            else:
+                if data[0]['log_index'] == 0:
+                    state['block_number'] = data[-1]['block_number'] - 1
+                    state['log_index'] = int(1e9)
+                else:
+                    state['block_number'] = data[-1]['block_number']
+                    state['log_index'] = data[-1]['log_index'] - 1
 
         return data, state
 

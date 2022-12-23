@@ -19,6 +19,7 @@ class CallStream(Stream):
                  function_name: str=None,
                  start_block: int=0,
                  end_block: int=None,
+                 order: str='asc',
                  live_stream: bool=False,
                  live_refresh_interval: int=3) -> None:
 
@@ -31,6 +32,7 @@ class CallStream(Stream):
         :param abi: The contract ABI.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the calls in.
         :param live_stream: Whether to stream live data.
         :param live_refresh_interval: The interval for refreshing the data in seconds when live.
         """
@@ -39,6 +41,7 @@ class CallStream(Stream):
             api_key=api_key,
             start_block=start_block,
             end_block=end_block,
+            order=order,
             live_stream=live_stream,
             live_refresh_interval=live_refresh_interval
         )
@@ -78,6 +81,7 @@ class CallStream(Stream):
 
     def fetch(self, state: dict,
               stop_block: int=None,
+              order: str='asc',
               limit: int=None) -> Tuple[List[dict], dict]:
 
         """
@@ -86,6 +90,7 @@ class CallStream(Stream):
 
         :param state: The current stream state.
         :param stop_block: The block to stop fetching at, exclusive.
+        :param order: The order to fetch the calls in.
         :param limit: The maximum number of calls to fetch.
         """
 
@@ -98,6 +103,7 @@ class CallStream(Stream):
             from_trace_index=state['trace_index'],
             function_selector=self.function_selector,
             stop_block=stop_block,
+            order=order,
             limit=limit
         )
 
@@ -109,9 +115,23 @@ class CallStream(Stream):
 
         # update state
         if len(data) > 0:
-            state['block_number'] = data[-1]['block_number']
-            state['transaction_position'] = data[-1]['transaction_position']
-            state['trace_index'] = data[-1]['trace_index'] + 1
+            if order == 'asc':
+                state['block_number'] = data[-1]['block_number']
+                state['transaction_position'] = data[-1]['transaction_position']
+                state['trace_index'] = data[-1]['trace_index'] + 1
+            else:
+                if data[0]['trace_index'] == 0:
+                    state['block_number'] = data[-1]['block_number']
+                    state['transaction_position'] = data[-1]['transaction_position'] - 1
+                    state['trace_index'] = int(1e9)
+                elif data[0]['transaction_position'] == 0:
+                    state['block_number'] = data[-1]['block_number'] - 1
+                    state['transaction_position'] = int(1e9)
+                    state['trace_index'] = int(1e9)
+                else:
+                    state['block_number'] = data[-1]['block_number']
+                    state['transaction_position'] = data[-1]['transaction_position']
+                    state['trace_index'] = data[-1]['trace_index'] - 1
 
         return data, state
 

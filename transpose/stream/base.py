@@ -17,6 +17,7 @@ class Stream(ABC):
     def __init__(self, api_key: str,
                  start_block: int=0,
                  end_block: int=None,
+                 order: str='asc',
                  live_stream: bool=False,
                  live_refresh_interval: int=3) -> None:
 
@@ -26,6 +27,7 @@ class Stream(ABC):
         :param api_key: The API key for the Transpose API.
         :param start_block: The block to start streaming from, inclusive.
         :param end_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the events in.
         :param live_stream: Whether to scroll the iterator when reaches live.
         :param live_refresh_interval: The delay between scroll attempts in seconds.
         """
@@ -33,17 +35,24 @@ class Stream(ABC):
         self.api_key = api_key
         self.start_block = start_block
         self.end_block = end_block
+        self.order = order
         self.live_stream = live_stream
         self.live_refresh_interval = live_refresh_interval
         self.__state = None
         self.__it_idx = None
         self.__it_data = None
 
+        # validate order
+        if order not in ['asc', 'desc']:
+            raise StreamError('Invalid order (must be "asc" or "desc")')
+
         # validate block range
         if not isinstance(start_block, int) or start_block < 0:
             raise StreamError('Invalid start block')
-        elif end_block is not None and (not isinstance(end_block, int) or end_block < start_block):
-            raise StreamError('Invalid end block')
+        elif end_block is not None:
+            if not isinstance(end_block, int): raise StreamError('Invalid end block')
+            elif order == 'asc' and end_block < start_block: raise StreamError('Invalid block range')
+            elif order == 'desc' and end_block > start_block: raise StreamError('Invalid block range')
 
         # validate scroll iterator
         if not isinstance(live_stream, bool):
@@ -127,6 +136,7 @@ class Stream(ABC):
         data, self.__state = self.fetch(
             state=self.__state,
             stop_block=self.end_block,
+            order=self.order,
             limit=limit
         )
 
@@ -157,6 +167,7 @@ class Stream(ABC):
     @abstractmethod
     def fetch(self, state: dict,
               stop_block: int=None,
+              order: str='asc',
               limit: int=None) -> Tuple[List[dict], dict]:
               
         """
@@ -165,6 +176,7 @@ class Stream(ABC):
 
         :param state: The current stream state.
         :param stop_block: The block to stop streaming at, exclusive.
+        :param order: The order to stream the events in.
         :param limit: The maximum number of items to return in the batch.
         :return: A tuple containing the batch data and the resulting state.
         """
