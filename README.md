@@ -80,6 +80,14 @@ stream = contract.stream_events(
 )
 ```
 
+You may also specify descending order to stream in the reverse direction. For example, to stream two batches of 10 events in reverse order from the latest block:
+
+```python
+stream = contract.stream_events(order='desc')
+stream.next(10)
+stream.next(10)
+```
+
 #### Live Streaming
 
 In order to stream live data, you can specify the `live_stream` parameter. If you use this parameter with a stream iterator, it will continously stream new events as they are added to the blockchain (with a ~3s delay from nodes):
@@ -184,6 +192,14 @@ stream = contract.stream_calls(
     start_block=16000000,
     live_stream=True
 )
+```
+
+You may also specify descending order to stream in the reverse direction. For example, to stream two batches of 10 calls in reverse order from the latest block:
+
+```python
+stream = contract.stream_calls(order='desc')
+stream.next(10)
+stream.next(10)
 ```
 
 #### Call Format
