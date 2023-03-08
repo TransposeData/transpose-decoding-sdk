@@ -57,7 +57,7 @@ class TransposeDecodedContract:
 
         # validate chain
         self.chain = chain
-        if chain not in ['ethereum', 'goerli', 'polygon']: 
+        if chain not in ['ethereum', 'goerli', 'polygon', 'arbitrum', 'scroll', 'canto']: 
             raise ContractError('Invalid chain')
 
         # validate API key
