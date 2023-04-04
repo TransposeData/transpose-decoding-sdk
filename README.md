@@ -243,7 +243,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Citations
 
-If you use this library in your research, please cite it as:
+If you use this library in your research, please cite it with the following:
 
 ```bibtex
 @misc{transpose-decoding-sdk,
