@@ -28,10 +28,10 @@ pip install transpose-decoding-sdk
 
 The SDK requires Python 3.6 or higher and has only 4 dependencies:
 
-- `eth-event`
-- `pip-chill`
-- `web3`
-- `dateutils`
+- [eth-event](https://pypi.org/project/eth-event/)
+- [pip-chill](https://pypi.org/project/pip-chill/)
+- [web3](https://pypi.org/project/web3/)
+- [dateutils](https://pypi.org/project/dateutils/)
 
 ## Getting Started
 
