@@ -21,7 +21,7 @@ def send_transpose_sql_request(api_key: str, query: str,
     response = requests.post(
         url='https://api.transpose.io/sql',
         json={'sql': query},
-        headers={'X-Api-Key': api_key}
+        headers={'X-Api-Key': api_key, 'X-Request-Source': 'decoding-sdk'}
     )
 
     # check for errors
