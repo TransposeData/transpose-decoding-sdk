@@ -1,6 +1,6 @@
 from eth_event import get_log_topic
 from eth_utils import decode_hex
-from eth_abi import decode_abi
+from eth_abi import decode
 from typing import List, Dict
 import re
 
@@ -100,7 +100,7 @@ def decode_hex_data(types: List[str], hex_data: str) -> tuple:
 
     if hex_data is None: return tuple()
     data = decode_hex(hex_data)
-    decoded_data = decode_abi(types, data)
+    decoded_data = decode(types, data)
     return decoded_data
 
 
