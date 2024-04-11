@@ -7,3 +7,6 @@ transpose_decoding_sdk.egg-info
 test.py
 benchmark.py
 DEPLOY.md
+
+.idea
+build

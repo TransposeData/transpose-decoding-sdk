@@ -11,5 +11,5 @@ def to_checksum_address(address: str) -> Optional[str]:
     :return: The checksum address.
     """
 
-    try: return Web3.toChecksumAddress(address)
+    try: return Web3.to_checksum_address(address)
     except: return None
