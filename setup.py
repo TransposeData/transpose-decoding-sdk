@@ -34,6 +34,8 @@ setup(
     # packages
     packages=find_packages(exclude=['demo', 'tests']),
 
+    requires=["wheel"],
+
     # dependencies
     install_requires=[
         'eth-event',
